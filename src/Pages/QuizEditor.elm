@@ -3,8 +3,8 @@ module Pages.QuizEditor exposing (Model, init, initModel, update, view)
 import Array exposing (Array)
 import Browser
 import Html exposing (..)
-import Html.Attributes exposing (class, for, id, type_, value)
-import Html.Events
+import Html.Attributes exposing (class, for, id, name, type_, value)
+import Html.Events as Events
 
 
 main : Program () Model Msg
@@ -37,7 +37,7 @@ defaultChoices =
 
 initModel : Model
 initModel =
-    Quiz "quiz 1" (Array.fromList [ QuestionElement defaultQuestion ]) 0 0
+    Quiz "quiz 1" (Array.fromList [ QuestionElement defaultQuestion ]) 0 Nothing
 
 
 init : () -> ( Model, Cmd Msg )
@@ -46,17 +46,29 @@ init () =
 
 
 type Msg
-    = Msg1
-    | Msg2
+    = InsertQuestion
+    | InsertSection
+    | DeleteQuestion
+    | DeleteSection
+    | ChangeTheme
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Msg1 ->
+        InsertQuestion ->
             ( model, Cmd.none )
 
-        Msg2 ->
+        InsertSection ->
+            ( model, Cmd.none )
+
+        DeleteQuestion ->
+            ( model, Cmd.none )
+
+        DeleteSection ->
+            ( model, Cmd.none )
+
+        ChangeTheme ->
             ( model, Cmd.none )
 
 
@@ -72,8 +84,28 @@ subscriptions model =
 view : Model -> Browser.Document Msg
 view model =
     { title = "Malaz Quiz Editor"
-    , body = [ viewHeader model, viewMain model, viewFooter ]
+    , body = [ viewToolbar, viewHeader model, viewMain model, viewFooter ]
     }
+
+
+viewSectionCreatingButton : Html msg
+viewSectionCreatingButton =
+    button [] [ text "i section" ]
+
+
+viewQuestionCreatingButton : Html msg
+viewQuestionCreatingButton =
+    button [] [ text "i question" ]
+
+
+viewThemeChangeButton : Html msg
+viewThemeChangeButton =
+    button [] [ text "change theme" ]
+
+
+viewToolbar : Html Msg
+viewToolbar =
+    div [] [ viewQuestionCreatingButton, viewQuestionCreatingButton, viewThemeChangeButton ]
 
 
 viewHeader : Quiz -> Html Msg
@@ -110,15 +142,15 @@ viewQuestion : Question -> Html Msg
 viewQuestion question =
     div [ class "question" ]
         [ div [ class "Qtext", id "" ] [ text question.question ]
-        , div [ class "Qchoices", id "" ] []
+        , div [ class "Qchoices", id "" ] (Array.toList <| Array.map (\x -> viewChoice x question.questionID) question.choices)
         ]
 
 
-viewChoice : Question -> Html Msg
-viewChoice question =
+viewChoice : Choice -> String -> Html Msg
+viewChoice choice radioName =
     div [ class "Qchoice" ]
-        [ label [ for "" ] []
-        , input [ type_ "radio", id "" ] []
+        [ label [ for choice.choiceID ] [ text choice.choice ]
+        , input [ type_ "radio", name radioName, id choice.choiceID ] []
         ]
 
 
@@ -153,13 +185,12 @@ type QuizElement
 
 
 {-| lastID: to keep track of the last question id
-    to increment or decrement it when adding or deleting questions
-    and will not be encoded to json.
+to increment or decrement it when adding or deleting questions
+and will not be encoded to json.
 -}
-
 type alias Quiz =
     { quizTitle : String
     , quizElements : Array QuizElement
     , lastQuestionID : Int
-    , lastSectionID : Maybe Int    -- maybe nothing in case ther is no sections
+    , lastSectionID : Maybe Int -- maybe nothing in case ther is no sections, the index starts from 0
     }
