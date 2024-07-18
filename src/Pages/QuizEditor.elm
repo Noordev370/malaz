@@ -1,5 +1,6 @@
 module Pages.QuizEditor exposing (Model, init, initModel, update, view)
 
+import Array exposing (Array)
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (class, for, id, type_, value)
@@ -29,14 +30,14 @@ defaultQuestion =
     Question "q1" "Question 1 ......" defaultChoices "q1c1" Nothing
 
 
-defaultChoices : List Choice
+defaultChoices : Array Choice
 defaultChoices =
-    [ Choice "q1c1" "choice A", Choice "q1c2" "choice B" ]
+    Array.fromList [ Choice "q1c1" "choice A", Choice "q1c2" "choice B" ]
 
 
 initModel : Model
 initModel =
-    Quiz "quiz 1" [ QuestionElement defaultQuestion ] 0 0
+    Quiz "quiz 1" (Array.fromList [ QuestionElement defaultQuestion ]) 0 0
 
 
 init : () -> ( Model, Cmd Msg )
@@ -82,7 +83,7 @@ viewHeader quiz =
 
 viewMain : Quiz -> Html Msg
 viewMain quiz =
-    main_ [] (List.map (\x -> viewElement x) quiz.quizElements)
+    main_ [] (List.map (\x -> viewElement x) (Array.toList quiz.quizElements))
 
 
 viewFooter : Html Msg
@@ -134,7 +135,7 @@ type alias Choice =
 type alias Question =
     { questionID : String
     , question : String
-    , choices : List Choice
+    , choices : Array Choice
     , correctChoice : String -- id of choice.
     , chosenChoice : Maybe String -- id of choice, will be encoded to null
     }
@@ -153,7 +154,7 @@ type QuizElement
 
 type alias Quiz =
     { quizTitle : String
-    , quizElements : List QuizElement
+    , quizElements : Array QuizElement
     , lastQuestionID : Int -- to keep track of the last question id to increment
     , lastSectionID : Int -- or decrement it when adding or deleting questions
 
