@@ -136,8 +136,8 @@ type alias Question =
     { questionID : String
     , question : String
     , choices : Array Choice
-    , correctChoice : String -- id of choice.
-    , chosenChoice : Maybe String -- id of choice, will be encoded to null
+    , correctChoice : String -- id of the choice.
+    , chosenChoice : Maybe String -- id of the choice, will be encoded to null
     }
 
 
@@ -152,11 +152,14 @@ type QuizElement
     | SectionElement Section
 
 
+{-| lastID: to keep track of the last question id
+    to increment or decrement it when adding or deleting questions
+    and will not be encoded to json.
+-}
+
 type alias Quiz =
     { quizTitle : String
     , quizElements : Array QuizElement
-    , lastQuestionID : Int -- to keep track of the last question id to increment
-    , lastSectionID : Int -- or decrement it when adding or deleting questions
-
-    -- will not be encoded to json
+    , lastQuestionID : Int
+    , lastSectionID : Maybe Int    -- maybe nothing in case ther is no sections
     }
