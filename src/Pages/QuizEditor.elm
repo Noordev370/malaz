@@ -17,10 +17,6 @@ main =
         }
 
 
-type alias Model =
-    Quiz
-
-
 
 -- create initial model
 
@@ -37,7 +33,7 @@ defaultChoices =
 
 initModel : Model
 initModel =
-    Quiz "quiz 1" (Array.fromList [ QuestionElement defaultQuestion ]) 0 Nothing
+    Model "quiz 1" (Array.fromList [ QuestionElement defaultQuestion ]) 0 Nothing
 
 
 init : () -> ( Model, Cmd Msg )
@@ -56,18 +52,28 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        InsertQuestion ->
+        --  sections related
+        InsertSection ->
+            let
+                addedSection =
+                    Section "New Section" (getNextSecID model)
+
+                updatedModel =
+                    addSectionToQuiz addedSection model
+            in
+            ( updatedModel, Cmd.none )
+
+        DeleteSection ->
             ( model, Cmd.none )
 
-        InsertSection ->
+        -- questions related
+        InsertQuestion ->
             ( model, Cmd.none )
 
         DeleteQuestion ->
             ( model, Cmd.none )
 
-        DeleteSection ->
-            ( model, Cmd.none )
-
+        -- others
         ChangeTheme ->
             ( model, Cmd.none )
 
@@ -88,32 +94,32 @@ view model =
     }
 
 
-viewSectionCreatingButton : Html msg
-viewSectionCreatingButton =
-    button [] [ text "i section" ]
+viewToolbar : Html Msg
+viewToolbar =
+    div [] [ viewQuestionCreationButton, viewSectionCreationButton, viewThemeChangeButton ]
 
 
-viewQuestionCreatingButton : Html msg
-viewQuestionCreatingButton =
+viewSectionCreationButton : Html Msg
+viewSectionCreationButton =
+    button [ Events.onClick InsertSection ] [ text "i section" ]
+
+
+viewQuestionCreationButton : Html Msg
+viewQuestionCreationButton =
     button [] [ text "i question" ]
 
 
-viewThemeChangeButton : Html msg
+viewThemeChangeButton : Html Msg
 viewThemeChangeButton =
     button [] [ text "change theme" ]
 
 
-viewToolbar : Html Msg
-viewToolbar =
-    div [] [ viewQuestionCreatingButton, viewQuestionCreatingButton, viewThemeChangeButton ]
-
-
-viewHeader : Quiz -> Html Msg
+viewHeader : Model -> Html Msg
 viewHeader quiz =
     header [] [ input [ type_ "textbox", value quiz.quizTitle ] [] ]
 
 
-viewMain : Quiz -> Html Msg
+viewMain : Model -> Html Msg
 viewMain quiz =
     main_ [] (List.map (\x -> viewElement x) (Array.toList quiz.quizElements))
 
@@ -135,7 +141,7 @@ viewElement e =
 
 viewSection : Section -> Html Msg
 viewSection section =
-    h2 [] [ text section.sectionTitle ]
+    input [ type_ "text", value section.sectionTitle, id (getSectionIDStr section.sectionID) ] []
 
 
 viewQuestion : Question -> Html Msg
@@ -184,13 +190,47 @@ type QuizElement
     | SectionElement Section
 
 
-{-| lastID: to keep track of the last question id
+{-| currentID: to keep track of the last question id
 to increment or decrement it when adding or deleting questions
 and will not be encoded to json.
 -}
-type alias Quiz =
+type alias Model =
     { quizTitle : String
     , quizElements : Array QuizElement
-    , lastQuestionID : Int
-    , lastSectionID : Maybe Int -- maybe nothing in case ther is no sections, the index starts from 0
+    , currentQuestionID : Int
+    , currentSectionID : Maybe Int -- maybe nothing in case ther is no sections, the index starts from 0
     }
+
+
+
+-- types helpers
+
+
+getNextSecID : Model -> Int
+getNextSecID quiz =
+    case quiz.currentSectionID of
+        Nothing ->
+            0
+
+        Just int ->
+            1 + int
+
+
+addSectionToQuiz : Section -> Model -> Model
+addSectionToQuiz sec quiz =
+    let
+        oldQuizElements =
+            quiz.quizElements
+
+        addedSecElement =
+            SectionElement sec
+
+        updatedQuizElements =
+            Array.push addedSecElement oldQuizElements
+    in
+    { quiz | quizElements = updatedQuizElements, currentSectionID = Just sec.sectionID }
+
+
+getSectionIDStr : Int -> String
+getSectionIDStr id =
+    "s" ++ String.fromInt id

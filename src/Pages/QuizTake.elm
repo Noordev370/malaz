@@ -1,7 +1,6 @@
 module Pages.QuizTake exposing (..)
 
 import Browser
-import DataStruct exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (name, style, type_, value)
 import Html.Events exposing (onClick)
