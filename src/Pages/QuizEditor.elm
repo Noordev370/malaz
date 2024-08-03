@@ -43,9 +43,17 @@ init () =
 
 type Msg
     = InsertQuestion
-    | InsertSection
+    | ChangeQuestion -- modify question text
     | DeleteQuestion
+
+    | InsertSection
+    | ChangeSection
     | DeleteSection
+
+    | InsertChoice
+    | ChangeChoice
+    | DeleteChoice
+
     | ChangeTheme
 
 
@@ -63,6 +71,9 @@ update msg model =
             in
             ( updatedModel, Cmd.none )
 
+        ChangeSection ->
+            ( model, Cmd.none )
+
         DeleteSection ->
             ( model, Cmd.none )
 
@@ -70,7 +81,20 @@ update msg model =
         InsertQuestion ->
             ( model, Cmd.none )
 
+        ChangeQuestion ->
+            ( model, Cmd.none )
+
         DeleteQuestion ->
+            ( model, Cmd.none )
+
+        -- choices related
+        InsertChoice ->
+            ( model, Cmd.none )
+
+        ChangeChoice ->
+            ( model, Cmd.none )
+
+        DeleteChoice ->
             ( model, Cmd.none )
 
         -- others
