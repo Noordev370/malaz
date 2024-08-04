@@ -1,4 +1,6 @@
 node_modules
 elm-stuff
+index.html
+elm.js
 package.json
 package-lock.json

@@ -21,19 +21,19 @@ main =
 -- create initial model
 
 
-defaultQuestion : Question
-defaultQuestion =
-    Question "q1" "Question 1 ......" defaultChoices "q1c1" Nothing
+initQuestion : Question
+initQuestion =
+    Question 0 "New Question ..." initChoices "q0c0" Nothing 1
 
 
-defaultChoices : Array Choice
-defaultChoices =
-    Array.fromList [ Choice "q1c1" "choice A", Choice "q1c2" "choice B" ]
+initChoices : Array Choice
+initChoices =
+    Array.fromList [ Choice 0 "choice A", Choice 1 "choice B" ]
 
 
 initModel : Model
 initModel =
-    Model "quiz 1" (Array.fromList [ QuestionElement defaultQuestion ]) 0 Nothing
+    Model "quiz 1" (Array.fromList [ QuestionElement initQuestion ]) 0 Nothing
 
 
 init : () -> ( Model, Cmd Msg )
@@ -45,15 +45,12 @@ type Msg
     = InsertQuestion
     | ChangeQuestion -- modify question text
     | DeleteQuestion
-
     | InsertSection
     | ChangeSection
     | DeleteSection
-
     | InsertChoice
     | ChangeChoice
     | DeleteChoice
-
     | ChangeTheme
 
 
@@ -79,7 +76,14 @@ update msg model =
 
         -- questions related
         InsertQuestion ->
-            ( model, Cmd.none )
+            let
+                addedQuestion =
+                    Question (getNextQuestionID model) "......." initChoices "bla" Nothing 1
+
+                updatedModel =
+                    addQuestionToQuiz addedQuestion model
+            in
+            ( updatedModel, Cmd.none )
 
         ChangeQuestion ->
             ( model, Cmd.none )
@@ -120,7 +124,7 @@ view model =
 
 viewToolbar : Html Msg
 viewToolbar =
-    div [] [ viewQuestionCreationButton, viewSectionCreationButton, viewThemeChangeButton ]
+    div [ class "toolbar" ] [ viewQuestionCreationButton, viewSectionCreationButton, viewThemeChangeButton ]
 
 
 viewSectionCreationButton : Html Msg
@@ -130,7 +134,7 @@ viewSectionCreationButton =
 
 viewQuestionCreationButton : Html Msg
 viewQuestionCreationButton =
-    button [] [ text "i question" ]
+    button [ Events.onClick InsertQuestion ] [ text "i question" ]
 
 
 viewThemeChangeButton : Html Msg
@@ -165,22 +169,22 @@ viewElement e =
 
 viewSection : Section -> Html Msg
 viewSection section =
-    input [ type_ "text", value section.sectionTitle, id (getSectionIDStr section.sectionID) ] []
+    input [ type_ "text", value section.sectionTitle, class "QE-sec", id (getSectionIDStr section) ] []
 
 
 viewQuestion : Question -> Html Msg
-viewQuestion question =
+viewQuestion q =
     div [ class "question" ]
-        [ div [ class "Qtext", id "" ] [ text question.question ]
-        , div [ class "Qchoices", id "" ] (Array.toList <| Array.map (\x -> viewChoice x question.questionID) question.choices)
+        [ div [ class "Qtext", id (getQuestionIDStr q) ] [ text q.question ]
+        , div [ class "Qchoices" ] (Array.toList <| Array.map (\x -> viewChoice x q) q.choices)
         ]
 
 
-viewChoice : Choice -> String -> Html Msg
-viewChoice choice radioName =
+viewChoice : Choice -> Question -> Html Msg
+viewChoice c q =
     div [ class "Qchoice" ]
-        [ label [ for choice.choiceID ] [ text choice.choice ]
-        , input [ type_ "radio", name radioName, id choice.choiceID ] []
+        [ label [ for (getChoiceIDStr q c) ] [ text c.choice ]
+        , input [ type_ "radio", name (getChoiceIDStr q c) ] []
         ]
 
 
@@ -189,17 +193,18 @@ viewChoice choice radioName =
 
 
 type alias Choice =
-    { choiceID : String
+    { choiceID : Int
     , choice : String
     }
 
 
 type alias Question =
-    { questionID : String
+    { questionID : Int
     , question : String
     , choices : Array Choice
     , correctChoice : String -- id of the choice.
     , chosenChoice : Maybe String -- id of the choice, will be encoded to null
+    , currentChoiceID : Int
     }
 
 
@@ -228,6 +233,7 @@ type alias Model =
 
 
 -- types helpers
+-- sections related
 
 
 getNextSecID : Model -> Int
@@ -255,6 +261,58 @@ addSectionToQuiz sec quiz =
     { quiz | quizElements = updatedQuizElements, currentSectionID = Just sec.sectionID }
 
 
-getSectionIDStr : Int -> String
-getSectionIDStr id =
-    "s" ++ String.fromInt id
+getSectionIDStr : Section -> String
+getSectionIDStr section =
+    "s" ++ String.fromInt section.sectionID
+
+
+
+-- choices related
+
+
+getNextChoiceID : Question -> Int
+getNextChoiceID question =
+    question.currentChoiceID + 1
+
+
+addChoiceToQuestion : Choice -> Question -> Question
+addChoiceToQuestion choice question =
+    let
+        updatesChoices =
+            Array.push choice question.choices
+    in
+    { question | choices = updatesChoices, currentChoiceID = choice.choiceID }
+
+
+getChoiceIDStr : Question -> Choice -> String
+getChoiceIDStr q c =
+    getQuestionIDStr q ++ "c" ++ String.fromInt c.choiceID
+
+
+
+-- questions related
+
+
+getNextQuestionID : Model -> Int
+getNextQuestionID m =
+    m.currentQuestionID + 1
+
+
+addQuestionToQuiz : Question -> Model -> Model
+addQuestionToQuiz question quiz =
+    let
+        oldQuizElements =
+            quiz.quizElements
+
+        addedQuestionElement =
+            QuestionElement question
+
+        updatedQuizElements =
+            Array.push addedQuestionElement oldQuizElements
+    in
+    { quiz | quizElements = updatedQuizElements, currentQuestionID = question.questionID }
+
+
+getQuestionIDStr : Question -> String
+getQuestionIDStr q =
+    "q" ++ String.fromInt q.questionID
