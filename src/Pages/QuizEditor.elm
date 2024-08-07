@@ -19,7 +19,7 @@ main =
 
 initModel : Model
 initModel =
-    Model "quiz 1" Array.empty Nothing Nothing
+    Model "quiz 1" Array.empty Nothing
 
 
 init : () -> ( Model, Cmd Msg )
@@ -64,7 +64,7 @@ update msg model =
         InsertQuestion ->
             let
                 defaultChoices =
-                    Array.fromList [ Choice  0 "choice A", Choice 1 "choice B" ]
+                    [ Choice 0 "choice A", Choice 1 "choice B" ]
 
                 addedQuestion =
                     Question (getNextQuestionID model) "New Question ....." defaultChoices (Just 0) 1
@@ -92,7 +92,7 @@ update msg model =
 -}
             let
                 addedChoice =
-                    Debug.log "Cho:" (Choice (getNextChoiceID q) "New Choice")
+                    Choice (getNextChoiceID q) "New Choice"
 
                 updatedQuestion =
                     addChoiceToQuestion addedChoice q
@@ -101,7 +101,7 @@ update msg model =
                     QuestionElement updatedQuestion
 
                 updatedQuizElements =
-                    Array.set q.questionID qtoQuizElement model.quizElements
+                    Array.set q.id qtoQuizElement model.quizElements
 
                 updatedModel =
                     { model | quizElements = updatedQuizElements }
@@ -182,14 +182,14 @@ viewElement e =
 
 viewSection : Section -> Html Msg
 viewSection section =
-    input [ type_ "text", value section.sectionTitle, class "QE-sec", id (getSectionIDStr section) ] []
+    input [ type_ "text", value section.title, class "QE-sec", id (getSectionIDStr section) ] []
 
 
 viewQuestion : Question -> Html Msg
 viewQuestion q =
     div [ class "question" ]
         [ div [ class "Qtext", id (getQuestionIDStr q) ] [ text q.question ]
-        , div [ class "Qchoices" ] (Array.toList <| Array.map (\x -> viewChoice x q) q.choices)
+        , div [ class "Qchoices" ] (List.map (\x -> viewChoice x q) q.choices)
         , div [ class "one-more-choice" ]
             [ button [ Events.onClick (InsertChoice q) ] [ text "+ choice" ]
             ]
@@ -209,23 +209,23 @@ viewChoice c q =
 
 
 type alias Choice =
-    { choiceID : Int
+    { id : Int
     , choice : String
     }
 
 
 type alias Question =
-    { questionID : Int
+    { id : Int
     , question : String
-    , choices : Array Choice
-    , correctChoice : Maybe Int -- id of the choice,
-    , currentChoiceID : Int --maybe nothing in case the user hasn't set the right choice yet.
+    , choices : List Choice
+    , correctChoice : Maybe Int -- id of the choice, maybe nothing in case the user hasn't set the right choice yet.
+    , lastChoiceIndex : Int
     }
 
 
 type alias Section =
-    { sectionTitle : String
-    , sectionID : Int
+    { title : String
+    , id : Int
     }
 
 
@@ -234,15 +234,14 @@ type QuizElement
     | SectionElement Section
 
 
-{-| currentID: to keep track of the last question id
-to increment or decrement it when adding or deleting questions
-and will not be encoded to json.
+{-| lastIndex: to keep track of the last quiz element index
+to increment or decrement it when adding or deleting elements
+and to access the element by index
 -}
 type alias Model =
     { quizTitle : String
     , quizElements : Array QuizElement
-    , currentQuestionID : Maybe Int -- maybe nothing in case ther is no elements,
-    , currentSectionID : Maybe Int -- the index starts from 0 .
+    , lastIndex : Maybe Int -- maybe nothing in case ther is no elements, the index starts from 0 .
     }
 
 
@@ -253,7 +252,7 @@ type alias Model =
 
 getNextSecID : Model -> Int
 getNextSecID model =
-    case model.currentSectionID of
+    case model.lastIndex of
         Nothing ->
             0
 
@@ -273,12 +272,12 @@ addSectionToQuiz s model =
         updatedQuizElements =
             Array.push addedSecElement oldQuizElements
     in
-    { model | quizElements = updatedQuizElements, currentSectionID = Just s.sectionID }
+    { model | quizElements = updatedQuizElements, lastIndex = Just s.id }
 
 
 getSectionIDStr : Section -> String
 getSectionIDStr s =
-    "s" ++ String.fromInt s.sectionID
+    "e" ++ String.fromInt s.id
 
 
 
@@ -287,21 +286,21 @@ getSectionIDStr s =
 
 getNextChoiceID : Question -> Int
 getNextChoiceID q =
-    q.currentChoiceID + 1
+    q.lastChoiceIndex + 1
 
 
 addChoiceToQuestion : Choice -> Question -> Question
 addChoiceToQuestion c q =
     let
         updatesChoices =
-            Array.push c q.choices
+            listPush c q.choices
     in
-    { q | choices = updatesChoices, currentChoiceID = c.choiceID }
+    { q | choices = updatesChoices, lastChoiceIndex = c.id }
 
 
 getChoiceIDStr : Question -> Choice -> String
 getChoiceIDStr q c =
-    getQuestionIDStr q ++ "c" ++ String.fromInt c.choiceID
+    getQuestionIDStr q ++ "c" ++ String.fromInt c.id
 
 
 
@@ -310,7 +309,7 @@ getChoiceIDStr q c =
 
 getNextQuestionID : Model -> Int
 getNextQuestionID model =
-    case model.currentQuestionID of
+    case model.lastIndex of
         Nothing ->
             0
 
@@ -330,9 +329,22 @@ addQuestionToQuiz q model =
         updatedQuizElements =
             Array.push addedQuestionElement oldQuizElements
     in
-    { model | quizElements = updatedQuizElements, currentQuestionID = Just q.questionID }
+    { model | quizElements = updatedQuizElements, lastIndex = Just q.id }
 
 
 getQuestionIDStr : Question -> String
 getQuestionIDStr q =
-    "q" ++ String.fromInt q.questionID
+    "e" ++ String.fromInt q.id
+
+
+
+-- utils
+
+
+listPush : a -> List a -> List a
+listPush item list =
+    let
+        toArray =
+            Array.fromList list
+    in
+    Array.toList (Array.push item toArray)
