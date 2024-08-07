@@ -32,7 +32,7 @@ type Msg
     | ChangeQuestion -- modify question text
     | DeleteQuestion
     | InsertSection
-    | ChangeSection
+    | ChangeSection Section String -- modify question text
     | DeleteSection
     | InsertChoice Question
     | ChangeChoice
@@ -54,8 +54,21 @@ update msg model =
             in
             ( updatedModel, Cmd.none )
 
-        ChangeSection ->
-            ( model, Cmd.none )
+        ChangeSection sec str ->
+            let
+                updatedSection =
+                    { sec | title = String.toUpper str }
+
+                secToQuizElement =
+                    SectionElement updatedSection
+
+                updatedQuizElement =
+                    Array.set sec.id secToQuizElement model.quizElements
+
+                updatedModel =
+                    { model | quizElements = updatedQuizElement }
+            in
+            ( updatedModel, Cmd.none )
 
         DeleteSection ->
             ( model, Cmd.none )
@@ -97,11 +110,11 @@ update msg model =
                 updatedQuestion =
                     addChoiceToQuestion addedChoice q
 
-                qtoQuizElement =
+                qToQuizElement =
                     QuestionElement updatedQuestion
 
                 updatedQuizElements =
-                    Array.set q.id qtoQuizElement model.quizElements
+                    Array.set q.id qToQuizElement model.quizElements
 
                 updatedModel =
                     { model | quizElements = updatedQuizElements }
@@ -182,7 +195,14 @@ viewElement e =
 
 viewSection : Section -> Html Msg
 viewSection section =
-    input [ type_ "text", value section.title, class "QE-sec", id (getSectionIDStr section) ] []
+    input
+        [ type_ "text"
+        , value section.title
+        , class "QE-sec"
+        , id (getSectionIDStr section)
+        , Events.onInput (ChangeSection section)
+        ]
+        []
 
 
 viewQuestion : Question -> Html Msg
