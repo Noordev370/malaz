@@ -29,10 +29,10 @@ init () =
 
 type Msg
     = InsertQuestion
-    | ChangeQuestion -- modify question text
-    | DeleteQuestion
+    | ChangeQuestion Question String -- modify question text
+    | DeleteQuestion Question
     | InsertSection
-    | ChangeSection Section String -- modify question text
+    | ChangeSection Section String -- modify section title
     | DeleteSection Section
     | InsertChoice Question
     | ChangeChoice
@@ -56,33 +56,21 @@ update msg model =
 
         ChangeSection sec str ->
             let
-                updatedSection =
-                    { sec | title = str }
-
-                secToQuizElement =
-                    SectionElement updatedSection
+                sectionElement =
+                    SectionElement { sec | title = str }
 
                 updatedQuizElements =
-                    Array.set sec.id secToQuizElement model.quizElements
-
-                updatedModel =
-                    { model | quizElements = updatedQuizElements }
+                    Array.set sec.id sectionElement model.quizElements
             in
-            ( updatedModel, Cmd.none )
+            ( { model | quizElements = updatedQuizElements }, Cmd.none )
 
         DeleteSection sec ->
-            -- deleting will corrupt the indexes so convert it to Nothing instead
+            -- deleting will corrupt the indexes so convert it to DeletedElement instead
             let
-                deletedSection =
-                    DeletedElement
-
                 updatedQuizElements =
-                    Array.set sec.id deletedSection model.quizElements
-
-                updatedModel =
-                    { model | quizElements = updatedQuizElements }
+                    Array.set sec.id DeletedElement model.quizElements
             in
-            ( updatedModel, Cmd.none )
+            ( { model | quizElements = updatedQuizElements }, Cmd.none )
 
         -- questions related
         InsertQuestion ->
@@ -98,11 +86,22 @@ update msg model =
             in
             ( updatedModel, Cmd.none )
 
-        ChangeQuestion ->
-            ( model, Cmd.none )
+        ChangeQuestion q str ->
+            let
+                updatedQuestion =
+                    QuestionElement { q | question = str }
 
-        DeleteQuestion ->
-            ( model, Cmd.none )
+                updatedQuizElements =
+                    Array.set q.id updatedQuestion model.quizElements
+            in
+            ( { model | quizElements = updatedQuizElements }, Cmd.none )
+
+        DeleteQuestion q ->
+            let
+                updatedQuizElement =
+                    Array.set q.id DeletedElement model.quizElements
+            in
+            ( { model | quizElements = updatedQuizElement }, Cmd.none )
 
         -- choices related
         InsertChoice q ->
@@ -126,11 +125,8 @@ update msg model =
 
                 updatedQuizElements =
                     Array.set q.id qToQuizElement model.quizElements
-
-                updatedModel =
-                    { model | quizElements = updatedQuizElements }
             in
-            ( updatedModel, Cmd.none )
+            ( { model | quizElements = updatedQuizElements }, Cmd.none )
 
         ChangeChoice ->
             ( model, Cmd.none )
@@ -225,7 +221,15 @@ viewSection section =
 viewQuestion : Question -> Html Msg
 viewQuestion q =
     div [ class "question" ]
-        [ div [ class "Qtext", id (getQuestionIDStr q) ] [ text q.question ]
+        [ input
+            [ type_ "text"
+            , class "Qtext"
+            , id (getQuestionIDStr q)
+            , value q.question
+            , Events.onInput (ChangeQuestion q)
+            ]
+            []
+        , button [ Events.onClick (DeleteQuestion q) ] [ text "X" ]
         , div [ class "Qchoices" ] (List.map (\x -> viewChoice x q) q.choices)
         , div [ class "one-more-choice" ]
             [ button [ Events.onClick (InsertChoice q) ] [ text "+ choice" ]
