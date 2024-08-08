@@ -3,7 +3,7 @@ module Pages.QuizEditor exposing (Model, init, update, view)
 import Array exposing (Array)
 import Browser
 import Html exposing (..)
-import Html.Attributes exposing (class, for, id, name, type_, value)
+import Html.Attributes exposing (class, for, hidden, id, name, type_, value)
 import Html.Events as Events
 
 
@@ -33,7 +33,7 @@ type Msg
     | DeleteQuestion
     | InsertSection
     | ChangeSection Section String -- modify question text
-    | DeleteSection
+    | DeleteSection Section
     | InsertChoice Question
     | ChangeChoice
     | DeleteChoice
@@ -57,21 +57,32 @@ update msg model =
         ChangeSection sec str ->
             let
                 updatedSection =
-                    { sec | title = String.toUpper str }
+                    { sec | title = str }
 
                 secToQuizElement =
                     SectionElement updatedSection
 
-                updatedQuizElement =
+                updatedQuizElements =
                     Array.set sec.id secToQuizElement model.quizElements
 
                 updatedModel =
-                    { model | quizElements = updatedQuizElement }
+                    { model | quizElements = updatedQuizElements }
             in
             ( updatedModel, Cmd.none )
 
-        DeleteSection ->
-            ( model, Cmd.none )
+        DeleteSection sec ->
+            -- deleting will corrupt the indexes so convert it to Nothing instead
+            let
+                deletedSection =
+                    DeletedElement
+
+                updatedQuizElements =
+                    Array.set sec.id deletedSection model.quizElements
+
+                updatedModel =
+                    { model | quizElements = updatedQuizElements }
+            in
+            ( updatedModel, Cmd.none )
 
         -- questions related
         InsertQuestion ->
@@ -192,17 +203,23 @@ viewElement e =
         QuestionElement question ->
             viewQuestion question
 
+        DeletedElement ->
+            viewDeleted
+
 
 viewSection : Section -> Html Msg
 viewSection section =
-    input
-        [ type_ "text"
-        , value section.title
-        , class "QE-sec"
-        , id (getSectionIDStr section)
-        , Events.onInput (ChangeSection section)
+    div []
+        [ input
+            [ type_ "text"
+            , value section.title
+            , class "QE-sec"
+            , id (getSectionIDStr section)
+            , Events.onInput (ChangeSection section)
+            ]
+            []
+        , button [ Events.onClick (DeleteSection section) ] [ text "X" ]
         ]
-        []
 
 
 viewQuestion : Question -> Html Msg
@@ -214,6 +231,11 @@ viewQuestion q =
             [ button [ Events.onClick (InsertChoice q) ] [ text "+ choice" ]
             ]
         ]
+
+
+viewDeleted : Html Msg
+viewDeleted =
+    div [ hidden True ] []
 
 
 viewChoice : Choice -> Question -> Html Msg
@@ -252,6 +274,7 @@ type alias Section =
 type QuizElement
     = QuestionElement Question
     | SectionElement Section
+    | DeletedElement
 
 
 {-| lastIndex: to keep track of the last quiz element index
