@@ -3,8 +3,9 @@ module Pages.QuizEditor exposing (Model, init, update, view)
 import Array exposing (Array)
 import Browser
 import Html exposing (..)
-import Html.Attributes exposing (class, for, hidden, id, name, type_, value)
+import Html.Attributes exposing (class, for, id, name, type_, value)
 import Html.Events as Events
+import List.Extra
 
 
 main : Program () Model Msg
@@ -35,8 +36,9 @@ type Msg
     | ChangeSection Section String -- modify section title
     | DeleteSection Section
     | InsertChoice Question
-    | ChangeChoice
-    | DeleteChoice
+    | ChangeChoice Question Choice String
+    | DeleteChoice Question Choice
+    | SetRightChoice Question Choice
     | ChangeTheme
 
 
@@ -128,11 +130,56 @@ update msg model =
             in
             ( { model | quizElements = updatedQuizElements }, Cmd.none )
 
-        ChangeChoice ->
-            ( model, Cmd.none )
+        ChangeChoice q c str ->
+            let
+                predicate : Choice -> Bool
+                predicate i =
+                    i.id == c.id
 
-        DeleteChoice ->
-            ( model, Cmd.none )
+                updateFunc : Choice -> Choice
+                updateFunc choice =
+                    { choice | choice = str }
+
+                updatedQuestion =
+                    { q | choices = List.Extra.updateIf predicate updateFunc q.choices }
+
+                qToQuizElement =
+                    QuestionElement updatedQuestion
+
+                updatedQuizElements =
+                    Array.set q.id qToQuizElement model.quizElements
+            in
+            ( { model | quizElements = updatedQuizElements }, Cmd.none )
+
+        DeleteChoice q c ->
+            let
+                predicate : Choice -> Bool
+                predicate i =
+                    i.id == c.id
+
+                updatedQuestion =
+                    { q | choices = List.Extra.filterNot predicate q.choices }
+
+                qToQuizElement =
+                    QuestionElement updatedQuestion
+
+                updatedQuizElements =
+                    Array.set q.id qToQuizElement model.quizElements
+            in
+            ( { model | quizElements = updatedQuizElements }, Cmd.none )
+
+        SetRightChoice q c ->
+            let
+                updatedQuestion =
+                    { q | rightChoice = Just c.id }
+
+                qToQuizElement =
+                    QuestionElement updatedQuestion
+
+                updatedQuizElements =
+                    Array.set q.id qToQuizElement model.quizElements
+            in
+            ( { model | quizElements = updatedQuizElements }, Cmd.none )
 
         -- others
         ChangeTheme ->
@@ -220,11 +267,10 @@ viewSection section =
 
 viewQuestion : Question -> Html Msg
 viewQuestion q =
-    div [ class "question" ]
+    div [ class "question", id (getQuestionIDStr q) ]
         [ input
             [ type_ "text"
             , class "Qtext"
-            , id (getQuestionIDStr q)
             , value q.question
             , Events.onInput (ChangeQuestion q)
             ]
@@ -239,14 +285,20 @@ viewQuestion q =
 
 viewDeleted : Html Msg
 viewDeleted =
-    div [ hidden True ] []
+    text ""
 
 
 viewChoice : Choice -> Question -> Html Msg
 viewChoice c q =
-    div [ class "Qchoice" ]
-        [ label [ for (getChoiceIDStr q c) ] [ text c.choice ]
-        , input [ type_ "radio", id (getChoiceIDStr q c), name (getQuestionIDStr q) ] []
+    div [ class "Qchoice", id (getChoiceIDStr q c) ]
+        [ input [ type_ "text", value c.choice, Events.onInput (ChangeChoice q c) ] []
+        , input
+            [ type_ "radio"
+            , name (getQuestionIDStr q)
+            , Events.onDoubleClick (SetRightChoice q c)
+            ]
+            []
+        , button [ Events.onClick (DeleteChoice q c) ] [ text "X" ]
         ]
 
 
@@ -264,7 +316,7 @@ type alias Question =
     { id : Int
     , question : String
     , choices : List Choice
-    , correctChoice : Maybe Int -- id of the choice, maybe nothing in case the user hasn't set the right choice yet.
+    , rightChoice : Maybe Int -- id of the choice, maybe nothing in case the user hasn't set the right choice yet.
     , lastChoiceIndex : Int
     }
 
