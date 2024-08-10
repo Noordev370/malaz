@@ -3,8 +3,9 @@ module Pages.QuizEditor exposing (Model, init, update, view)
 import Array exposing (Array)
 import Browser
 import Html exposing (..)
-import Html.Attributes exposing (class, for, id, name, type_, value)
+import Html.Attributes exposing (class, id, name, type_, value)
 import Html.Events as Events
+import Json.Encode as Encode
 import List.Extra
 
 
@@ -39,6 +40,7 @@ type Msg
     | ChangeChoice Question Choice String
     | DeleteChoice Question Choice
     | SetRightChoice Question Choice
+    | SaveToFile
     | ChangeTheme
 
 
@@ -185,6 +187,9 @@ update msg model =
         ChangeTheme ->
             ( model, Cmd.none )
 
+        SaveToFile ->
+            ( model, Cmd.none )
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -204,7 +209,12 @@ view model =
 
 viewToolbar : Html Msg
 viewToolbar =
-    div [ class "toolbar" ] [ viewQuestionCreationButton, viewSectionCreationButton, viewThemeChangeButton ]
+    div [ class "toolbar" ]
+        [ viewQuestionCreationButton
+        , viewSectionCreationButton
+        , viewThemeChangeButton
+        , viewSaveButton
+        ]
 
 
 viewSectionCreationButton : Html Msg
@@ -220,6 +230,11 @@ viewQuestionCreationButton =
 viewThemeChangeButton : Html Msg
 viewThemeChangeButton =
     button [ Events.onClick ChangeTheme ] [ text "change theme" ]
+
+
+viewSaveButton : Html Msg
+viewSaveButton =
+    button [ Events.onClick SaveToFile ] [ text "Save" ]
 
 
 viewHeader : Model -> Html Msg
@@ -334,8 +349,7 @@ type QuizElement
 
 
 {-| lastIndex: to keep track of the last quiz element index
-to increment or decrement it when adding or deleting elements
-and to access the element by index
+to incrementt it when adding elements and to access the element by index.
 -}
 type alias Model =
     { quizTitle : String
@@ -437,7 +451,38 @@ getQuestionIDStr q =
 
 
 
--- utils
+-- Validators
+
+
+questionFound : QuizElement -> Bool
+questionFound x =
+    False
+
+
+choiceFound : Question -> Bool
+choiceFound q =
+    False
+
+
+rightChoiceChosen : Question -> Bool
+rightChoiceChosen q =
+    False
+
+
+
+-- Encoder
+
+
+choiceEncoder : Choice -> Encode.Value
+choiceEncoder c =
+    Encode.object
+        [ ( "id", Encode.int c.id )
+        , ( "choice", Encode.string c.choice )
+        ]
+
+
+
+-- Utils
 
 
 listPush : a -> List a -> List a
