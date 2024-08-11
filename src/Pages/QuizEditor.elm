@@ -1,12 +1,11 @@
 module Pages.QuizEditor exposing (Model, init, update, view)
 
-import Array exposing (Array)
 import Browser
+import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (class, id, name, type_, value)
 import Html.Events as Events
 import Json.Encode as Encode
-import List.Extra
 
 
 main : Program () Model Msg
@@ -21,7 +20,7 @@ main =
 
 initModel : Model
 initModel =
-    Model "quiz 1" Array.empty Nothing
+    Model "quiz 1" Dict.empty Nothing
 
 
 init : () -> ( Model, Cmd Msg )
@@ -64,15 +63,15 @@ update msg model =
                     SectionElement { sec | title = str }
 
                 updatedQuizElements =
-                    Array.set sec.id sectionElement model.quizElements
+                    -- use Dict.insert to replace the existing key with new value not Dict.update
+                    Dict.insert sec.id sectionElement model.quizElements
             in
             ( { model | quizElements = updatedQuizElements }, Cmd.none )
 
         DeleteSection sec ->
-            -- deleting will corrupt the indexes so convert it to DeletedElement instead
             let
                 updatedQuizElements =
-                    Array.set sec.id DeletedElement model.quizElements
+                    Dict.remove sec.id model.quizElements
             in
             ( { model | quizElements = updatedQuizElements }, Cmd.none )
 
@@ -80,7 +79,7 @@ update msg model =
         InsertQuestion ->
             let
                 defaultChoices =
-                    [ Choice 0 "choice A", Choice 1 "choice B" ]
+                    Dict.fromList [ ( 0, Choice 0 "choice A" ), ( 1, Choice 1 "choice B" ) ]
 
                 addedQuestion =
                     Question (getNextQuestionID model) "New Question ....." defaultChoices (Just 0) 1
@@ -96,26 +95,22 @@ update msg model =
                     QuestionElement { q | question = str }
 
                 updatedQuizElements =
-                    Array.set q.id updatedQuestion model.quizElements
+                    Dict.insert q.id updatedQuestion model.quizElements
             in
             ( { model | quizElements = updatedQuizElements }, Cmd.none )
 
         DeleteQuestion q ->
             let
                 updatedQuizElement =
-                    Array.set q.id DeletedElement model.quizElements
+                    Dict.remove q.id model.quizElements
             in
             ( { model | quizElements = updatedQuizElement }, Cmd.none )
 
         -- choices related
         InsertChoice q ->
-            {--| to update the question with new choice then update the model with that question
+            {--to update the question with new choice then update the model with that question
            |
            | add the new choice to the question and return the new question
-           | then covert the question to quiz element
-           | then set that element by Array.set to be new value instead of the old one.
-           |
-           | the question id is the same as the index of the corresponding elemnt
 -}
             let
                 addedChoice =
@@ -128,45 +123,36 @@ update msg model =
                     QuestionElement updatedQuestion
 
                 updatedQuizElements =
-                    Array.set q.id qToQuizElement model.quizElements
+                    Dict.insert q.id qToQuizElement model.quizElements
             in
             ( { model | quizElements = updatedQuizElements }, Cmd.none )
 
         ChangeChoice q c str ->
             let
-                predicate : Choice -> Bool
-                predicate i =
-                    i.id == c.id
-
-                updateFunc : Choice -> Choice
-                updateFunc choice =
-                    { choice | choice = str }
+                updatedChoice =
+                    { c | choice = str }
 
                 updatedQuestion =
-                    { q | choices = List.Extra.updateIf predicate updateFunc q.choices }
+                    { q | choices = Dict.insert c.id updatedChoice q.choices }
 
                 qToQuizElement =
                     QuestionElement updatedQuestion
 
                 updatedQuizElements =
-                    Array.set q.id qToQuizElement model.quizElements
+                    Dict.insert q.id qToQuizElement model.quizElements
             in
             ( { model | quizElements = updatedQuizElements }, Cmd.none )
 
         DeleteChoice q c ->
             let
-                predicate : Choice -> Bool
-                predicate i =
-                    i.id == c.id
-
                 updatedQuestion =
-                    { q | choices = List.Extra.filterNot predicate q.choices }
+                    { q | choices = Dict.remove c.id q.choices }
 
                 qToQuizElement =
                     QuestionElement updatedQuestion
 
                 updatedQuizElements =
-                    Array.set q.id qToQuizElement model.quizElements
+                    Dict.insert q.id qToQuizElement model.quizElements
             in
             ( { model | quizElements = updatedQuizElements }, Cmd.none )
 
@@ -176,10 +162,10 @@ update msg model =
                     { q | rightChoice = Just c.id }
 
                 qToQuizElement =
-                    QuestionElement updatedQuestion
+                    QuestionElement (Debug.log "q" updatedQuestion)
 
                 updatedQuizElements =
-                    Array.set q.id qToQuizElement model.quizElements
+                    Dict.insert q.id qToQuizElement model.quizElements
             in
             ( { model | quizElements = updatedQuizElements }, Cmd.none )
 
@@ -244,7 +230,7 @@ viewHeader model =
 
 viewMain : Model -> Html Msg
 viewMain model =
-    main_ [] (List.map (\x -> viewElement x) (Array.toList model.quizElements))
+    main_ [] (List.map (\x -> viewElement x) (Dict.values model.quizElements))
 
 
 viewFooter : Html Msg
@@ -260,9 +246,6 @@ viewElement e =
 
         QuestionElement question ->
             viewQuestion question
-
-        DeletedElement ->
-            viewDeleted
 
 
 viewSection : Section -> Html Msg
@@ -291,16 +274,11 @@ viewQuestion q =
             ]
             []
         , button [ Events.onClick (DeleteQuestion q) ] [ text "X" ]
-        , div [ class "Qchoices" ] (List.map (\x -> viewChoice x q) q.choices)
+        , div [ class "Qchoices" ] (List.map (\x -> viewChoice x q) (Dict.values q.choices))
         , div [ class "one-more-choice" ]
             [ button [ Events.onClick (InsertChoice q) ] [ text "+ choice" ]
             ]
         ]
-
-
-viewDeleted : Html Msg
-viewDeleted =
-    text ""
 
 
 viewChoice : Choice -> Question -> Html Msg
@@ -310,7 +288,7 @@ viewChoice c q =
         , input
             [ type_ "radio"
             , name (getQuestionIDStr q)
-            , Events.onDoubleClick (SetRightChoice q c)
+            , Events.onClick (SetRightChoice q c)
             ]
             []
         , button [ Events.onClick (DeleteChoice q c) ] [ text "X" ]
@@ -330,7 +308,7 @@ type alias Choice =
 type alias Question =
     { id : Int
     , question : String
-    , choices : List Choice
+    , choices : Dict Int Choice -- Int is the id of the Choice
     , rightChoice : Maybe Int -- id of the choice, maybe nothing in case the user hasn't set the right choice yet.
     , lastChoiceIndex : Int
     }
@@ -345,7 +323,6 @@ type alias Section =
 type QuizElement
     = QuestionElement Question
     | SectionElement Section
-    | DeletedElement
 
 
 {-| lastIndex: to keep track of the last quiz element index
@@ -353,7 +330,7 @@ to incrementt it when adding elements and to access the element by index.
 -}
 type alias Model =
     { quizTitle : String
-    , quizElements : Array QuizElement
+    , quizElements : Dict Int QuizElement -- Int is the id of the Question or Section
     , lastIndex : Maybe Int -- maybe nothing in case ther is no elements, the index starts from 0 .
     }
 
@@ -383,7 +360,7 @@ addSectionToQuiz s model =
             SectionElement s
 
         updatedQuizElements =
-            Array.push addedSecElement oldQuizElements
+            Dict.insert s.id addedSecElement oldQuizElements
     in
     { model | quizElements = updatedQuizElements, lastIndex = Just s.id }
 
@@ -406,7 +383,7 @@ addChoiceToQuestion : Choice -> Question -> Question
 addChoiceToQuestion c q =
     let
         updatesChoices =
-            listPush c q.choices
+            Dict.insert c.id c q.choices
     in
     { q | choices = updatesChoices, lastChoiceIndex = c.id }
 
@@ -440,7 +417,7 @@ addQuestionToQuiz q model =
             QuestionElement q
 
         updatedQuizElements =
-            Array.push addedQuestionElement oldQuizElements
+            Dict.insert q.id addedQuestionElement oldQuizElements
     in
     { model | quizElements = updatedQuizElements, lastIndex = Just q.id }
 
@@ -481,14 +458,21 @@ choiceEncoder c =
         ]
 
 
+sectionEncoder : Section -> Encode.Value
+sectionEncoder s =
+    Encode.object
+        [ ( "id", Encode.int s.id )
+        , ( "title", Encode.string s.title )
+        ]
 
--- Utils
 
 
-listPush : a -> List a -> List a
-listPush item list =
-    let
-        toArray =
-            Array.fromList list
-    in
-    Array.toList (Array.push item toArray)
+{--questionEncoder : Question -> Encode.Value
+questionEncoder q =
+    Encode.object
+        [ ( "id", Encode.int q.id )
+        , ( "question", Encode.string q.question )
+        , ("choices",)
+        , ("rightChoice" , Encode.int q.rightChoice)
+        ]
+--}
