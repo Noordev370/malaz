@@ -2,6 +2,7 @@ module Pages.QuizEditor exposing (Model, init, update, view)
 
 import Browser
 import Dict exposing (Dict)
+import File.Download as Download
 import Html exposing (..)
 import Html.Attributes exposing (class, id, name, type_, value)
 import Html.Events as Events
@@ -50,7 +51,7 @@ update msg model =
         InsertSection ->
             let
                 addedSection =
-                    Section "New Section" (getNextSecID model)
+                    Section "New Section" (getNextElementID model)
 
                 updatedModel =
                     addSectionToQuiz addedSection model
@@ -82,7 +83,7 @@ update msg model =
                     Dict.fromList [ ( 0, Choice 0 "choice A" ), ( 1, Choice 1 "choice B" ) ]
 
                 addedQuestion =
-                    Question (getNextQuestionID model) "New Question ....." defaultChoices (Just 0) 1
+                    Question (getNextElementID model) "New Question ....." defaultChoices (Just 0) 1
 
                 updatedModel =
                     addQuestionToQuiz addedQuestion model
@@ -162,7 +163,7 @@ update msg model =
                     { q | rightChoice = Just c.id }
 
                 qToQuizElement =
-                    QuestionElement (Debug.log "q" updatedQuestion)
+                    QuestionElement updatedQuestion
 
                 updatedQuizElements =
                     Dict.insert q.id qToQuizElement model.quizElements
@@ -174,7 +175,7 @@ update msg model =
             ( model, Cmd.none )
 
         SaveToFile ->
-            ( model, Cmd.none )
+            ( model, Download.string "f.json" "text/json" (generateJson model) )
 
 
 subscriptions : Model -> Sub Msg
@@ -337,17 +338,20 @@ type alias Model =
 
 
 -- types helpers
--- sections related
 
 
-getNextSecID : Model -> Int
-getNextSecID model =
+getNextElementID : Model -> Int
+getNextElementID model =
     case model.lastIndex of
         Nothing ->
             0
 
         Just int ->
             1 + int
+
+
+
+-- sections related
 
 
 addSectionToQuiz : Section -> Model -> Model
@@ -395,16 +399,6 @@ getChoiceIDStr q c =
 
 
 -- questions related
-
-
-getNextQuestionID : Model -> Int
-getNextQuestionID model =
-    case model.lastIndex of
-        Nothing ->
-            0
-
-        Just int ->
-            1 + int
 
 
 addQuestionToQuiz : Question -> Model -> Model
@@ -466,13 +460,42 @@ sectionEncoder s =
         ]
 
 
-
-{--questionEncoder : Question -> Encode.Value
+questionEncoder : Question -> Encode.Value
 questionEncoder q =
+    let
+        choices =
+            Dict.values q.choices
+    in
     Encode.object
         [ ( "id", Encode.int q.id )
         , ( "question", Encode.string q.question )
-        , ("choices",)
-        , ("rightChoice" , Encode.int q.rightChoice)
+        , ( "choices", Encode.list (\c -> choiceEncoder c) choices )
+        , ( "rightChoice", Encode.int (Maybe.withDefault 0 q.rightChoice) )
         ]
---}
+
+
+quizElementEncoder : QuizElement -> Encode.Value
+quizElementEncoder element =
+    case element of
+        QuestionElement q ->
+            questionEncoder q
+
+        SectionElement s ->
+            sectionEncoder s
+
+
+modelEncoder : Model -> Encode.Value
+modelEncoder model =
+    let
+        elements =
+            Dict.values model.quizElements
+    in
+    Encode.object
+        [ ( "QuizTitle", Encode.string model.quizTitle )
+        , ( "quizElements", Encode.list (\el -> quizElementEncoder el) elements )
+        ]
+
+
+generateJson : Model -> String
+generateJson model =
+    Encode.encode 1 (modelEncoder model)
