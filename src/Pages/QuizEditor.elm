@@ -15,7 +15,7 @@ main =
         { init = init
         , view = view
         , update = update
-        , subscriptions = subscriptions
+        , subscriptions = \_ -> Sub.none
         }
 
 
@@ -180,15 +180,10 @@ update msg model =
 
         SaveToFile ->
             let
-                fileName = model.quizTitle ++ ".json"
+                fileName =
+                    model.quizTitle ++ ".json"
             in
-            
             ( model, Download.string fileName "text/json" (generateJson model) )
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.none
 
 
 

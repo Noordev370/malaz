@@ -1,4 +1,4 @@
-module Pages.QuizTake exposing (Msg(..), init, main)
+module Pages.QuizSelector exposing (Msg(..), init, main)
 
 import Browser
 import Html exposing (..)
