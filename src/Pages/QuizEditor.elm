@@ -30,7 +30,8 @@ init () =
 
 
 type Msg
-    = InsertQuestion
+    = ChangeQuizTitle String
+    | InsertQuestion
     | ChangeQuestion Question String -- modify question text
     | DeleteQuestion Question
     | InsertSection
@@ -47,6 +48,9 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ChangeQuizTitle str ->
+            ( { model | quizTitle = str }, Cmd.none )
+
         --  sections related
         InsertSection ->
             let
@@ -175,7 +179,11 @@ update msg model =
             ( model, Cmd.none )
 
         SaveToFile ->
-            ( model, Download.string "f.json" "text/json" (generateJson model) )
+            let
+                fileName = model.quizTitle ++ ".json"
+            in
+            
+            ( model, Download.string fileName "text/json" (generateJson model) )
 
 
 subscriptions : Model -> Sub Msg
@@ -226,7 +234,14 @@ viewSaveButton =
 
 viewHeader : Model -> Html Msg
 viewHeader model =
-    header [] [ input [ type_ "textbox", value model.quizTitle ] [] ]
+    header []
+        [ input
+            [ type_ "textbox"
+            , Events.onInput ChangeQuizTitle
+            , value model.quizTitle
+            ]
+            []
+        ]
 
 
 viewMain : Model -> Html Msg
@@ -425,19 +440,48 @@ getQuestionIDStr q =
 -- Validators
 
 
-questionFound : QuizElement -> Bool
-questionFound x =
-    False
+quizElementToBool : QuizElement -> Bool
+quizElementToBool el =
+    case el of
+        QuestionElement _ ->
+            True
+
+        SectionElement _ ->
+            False
 
 
-choiceFound : Question -> Bool
-choiceFound q =
-    False
+isQuestionFound : Model -> Bool
+isQuestionFound model =
+    let
+        elements =
+            Dict.values model.quizElements
+    in
+    if List.isEmpty elements then
+        False
+
+    else
+        let
+            boolList =
+                List.map quizElementToBool elements
+        in
+        -- if there is any questiom element the list will contain at least one True
+        -- and then return True
+        List.member True boolList
 
 
-rightChoiceChosen : Question -> Bool
-rightChoiceChosen q =
-    False
+isChoiceFound : Question -> Bool
+isChoiceFound q =
+    Dict.isEmpty q.choices
+
+
+isRightChoiceChosen : Question -> Bool
+isRightChoiceChosen q =
+    case q.rightChoice of
+        Just _ ->
+            True
+
+        Nothing ->
+            False
 
 
 
