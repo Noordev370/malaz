@@ -517,10 +517,10 @@ quizElementEncoder : QuizElement -> Encode.Value
 quizElementEncoder element =
     case element of
         QuestionElement q ->
-            questionEncoder q
+            Encode.object [ ( "question", questionEncoder q ) ]
 
         SectionElement s ->
-            sectionEncoder s
+            Encode.object [ ( "section", sectionEncoder s ) ]
 
 
 modelEncoder : Model -> Encode.Value
