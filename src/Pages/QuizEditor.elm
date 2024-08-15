@@ -483,10 +483,10 @@ isRightChoiceChosen q =
 -- Encoder
 
 
-choiceEncoder : Choice -> Encode.Value
-choiceEncoder c =
+choiceEncoder : Question -> Choice -> Encode.Value
+choiceEncoder q c =
     Encode.object
-        [ ( "id", Encode.int c.id )
+        [ ( "id", Encode.string (getChoiceIDStr q c) )
         , ( "choice", Encode.string c.choice )
         ]
 
@@ -494,7 +494,7 @@ choiceEncoder c =
 sectionEncoder : Section -> Encode.Value
 sectionEncoder s =
     Encode.object
-        [ ( "id", Encode.int s.id )
+        [ ( "id", Encode.string (getSectionIDStr s) )
         , ( "title", Encode.string s.title )
         ]
 
@@ -504,12 +504,15 @@ questionEncoder q =
     let
         choices =
             Dict.values q.choices
+
+        rigthChoiceIDStr =
+            getQuestionIDStr q ++ "c" ++ String.fromInt (Maybe.withDefault 0 q.rightChoice)
     in
     Encode.object
-        [ ( "id", Encode.int q.id )
+        [ ( "id", Encode.string (getQuestionIDStr q) )
         , ( "question", Encode.string q.question )
-        , ( "choices", Encode.list (\c -> choiceEncoder c) choices )
-        , ( "rightChoice", Encode.int (Maybe.withDefault 0 q.rightChoice) )
+        , ( "choices", Encode.list (\c -> choiceEncoder q c) choices )
+        , ( "rightChoice", Encode.string rigthChoiceIDStr )
         ]
 
 
