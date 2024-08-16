@@ -2,10 +2,13 @@ module Pages.QuizTake exposing (init, main)
 
 import Browser
 import Dict exposing (Dict)
+import File
+import File.Select
 import Html exposing (..)
-import Html.Attributes exposing (class, for, id, name, type_)
+import Html.Attributes as Attributes exposing (class, for, id, name, type_)
 import Html.Events as Events
 import Json.Decode as D exposing (Decoder, field)
+import Task
 
 
 main : Program () Model Msg
@@ -30,8 +33,10 @@ init () =
 
 type Msg
     = NoOp
-    | DecodeQuiz
-    | ChoiceSelected
+    | QuizFileRequested
+    | QuizFileSelected File.File
+    | QuizFileLoaded String
+    | ChoiceSelected Choice
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -40,10 +45,25 @@ update msg model =
         NoOp ->
             ( model, Cmd.none )
 
-        DecodeQuiz ->
-            ( model, Cmd.none )
+        QuizFileRequested ->
+            ( model, File.Select.file [ "text/json" ] QuizFileSelected )
 
-        ChoiceSelected ->
+        QuizFileSelected file ->
+            ( model, Task.perform QuizFileLoaded (File.toString file) )
+
+        QuizFileLoaded json ->
+            let
+                tryDecode =
+                    D.decodeString quizDecoder json
+            in
+            case tryDecode of
+                Ok quiz ->
+                    ( QuizLoaded quiz, Cmd.none )
+
+                Err error ->
+                    ( QuizDecodingFailed error, Cmd.none )
+
+        ChoiceSelected c ->
             ( model, Cmd.none )
 
 
@@ -60,13 +80,16 @@ view model =
         BeforeLoadingQuiz ->
             { title = "Selct a quiz file", body = [ viewQuizSelector ] }
 
+        QuizDecodingFailed error ->
+            { title = "Selct a quiz file", body = [ div [] [ text <| D.errorToString error ] ] }
+
 
 viewQuizSelector : Html Msg
 viewQuizSelector =
     div []
         [ label [] [ text "choose .quiz file" ]
         , br [] []
-        , input [ type_ "file", Html.Attributes.accept ".json,.quiz" ] []
+        , input [ type_ "file", Attributes.accept ".json,.quiz" ] []
         ]
 
 
@@ -124,7 +147,7 @@ viewChoice c q =
             [ type_ "radio"
             , id c.id
             , name q.id
-            , Events.onClick ChoiceSelected
+            , Events.onClick (ChoiceSelected c)
             ]
             []
         ]
@@ -169,6 +192,7 @@ type alias Quiz =
 type Model
     = BeforeLoadingQuiz
     | QuizLoaded Quiz
+    | QuizDecodingFailed D.Error
 
 
 
