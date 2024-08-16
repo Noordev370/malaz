@@ -502,8 +502,11 @@ sectionEncoder s =
 questionEncoder : Question -> Encode.Value
 questionEncoder q =
     let
-        choices =
-            Dict.values q.choices
+        idToDictKey :
+            Int
+            -> String -- ex: 0 -> e0c0, 1 -> e0c1   etc..
+        idToDictKey k =
+            getQuestionIDStr q ++ "c" ++ String.fromInt k
 
         rigthChoiceIDStr =
             getQuestionIDStr q ++ "c" ++ String.fromInt (Maybe.withDefault 0 q.rightChoice)
@@ -511,7 +514,7 @@ questionEncoder q =
     Encode.object
         [ ( "id", Encode.string (getQuestionIDStr q) )
         , ( "question", Encode.string q.question )
-        , ( "choices", Encode.list (\c -> choiceEncoder q c) choices )
+        , ( "choices", Encode.dict idToDictKey (choiceEncoder q) q.choices )
         , ( "rightChoice", Encode.string rigthChoiceIDStr )
         ]
 
@@ -520,21 +523,22 @@ quizElementEncoder : QuizElement -> Encode.Value
 quizElementEncoder element =
     case element of
         QuestionElement q ->
-            Encode.object [ ( "question", questionEncoder q ) ]
+            questionEncoder q
 
         SectionElement s ->
-            Encode.object [ ( "section", sectionEncoder s ) ]
+            sectionEncoder s
 
 
 modelEncoder : Model -> Encode.Value
 modelEncoder model =
     let
-        elements =
-            Dict.values model.quizElements
+        idToDictKey : Int -> String
+        idToDictKey k =
+            "e" ++ String.fromInt k
     in
     Encode.object
-        [ ( "QuizTitle", Encode.string model.quizTitle )
-        , ( "quizElements", Encode.list (\el -> quizElementEncoder el) elements )
+        [ ( "quizTitle", Encode.string model.quizTitle )
+        , ( "quizElements", Encode.dict idToDictKey quizElementEncoder model.quizElements )
         ]
 
 

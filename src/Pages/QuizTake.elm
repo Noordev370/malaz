@@ -75,7 +75,7 @@ view : Model -> Browser.Document Msg
 view model =
     case model of
         QuizLoaded quiz ->
-            { title = quiz.quizTitle, body = [ viewQuiz quiz ] }
+            { title = quiz.quizTitle, body = viewQuiz quiz }
 
         BeforeLoadingQuiz ->
             { title = "Selct a quiz file", body = [ viewQuizSelector ] }
@@ -89,13 +89,14 @@ viewQuizSelector =
     div []
         [ label [] [ text "choose .quiz file" ]
         , br [] []
-        , input [ type_ "file", Attributes.accept ".json,.quiz" ] []
+        , button [ type_ "file", Attributes.accept ".quiz", Events.onClick QuizFileRequested ]
+            [ text "select" ]
         ]
 
 
-viewQuiz : Quiz -> Html Msg
+viewQuiz : Quiz -> List (Html Msg)
 viewQuiz quiz =
-    div [] [ viewHeader quiz, viewMain quiz, viewFooter ]
+    [ viewHeader quiz, viewMain quiz, viewFooter ]
 
 
 viewHeader : Quiz -> Html Msg
@@ -125,10 +126,8 @@ viewElement e =
 
 
 viewSection : Section -> Html Msg
-viewSection section =
-    div []
-        [ h3 [ class "QE-sec", id section.id ] []
-        ]
+viewSection s =
+    h3 [ class "QE-sec", id s.id ] [ text s.title ]
 
 
 viewQuestion : Question -> Html Msg
@@ -173,14 +172,14 @@ type alias Question =
 
 
 type alias Section =
-    { title : String
-    , id : String
+    { id : String
+    , title : String
     }
 
 
 type QuizElement
-    = QuestionElement Question
-    | SectionElement Section
+    = SectionElement Section
+    | QuestionElement Question
 
 
 type alias Quiz =
@@ -210,7 +209,7 @@ questionDecoder =
     D.map5 Question
         (field "id" D.string)
         (field "question" D.string)
-        (field "id" (D.dict choiceDecoder))
+        (field "choices" (D.dict choiceDecoder))
         (field "rightChoice" D.string)
         (D.maybe (field "chosenChoice" D.string))
 
