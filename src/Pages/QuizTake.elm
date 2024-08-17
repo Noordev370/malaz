@@ -23,7 +23,7 @@ main =
 
 initModel : Model
 initModel =
-    BeforeLoadingQuiz
+    BeforeQuizLoading
 
 
 init : () -> ( Model, Cmd Msg )
@@ -36,10 +36,20 @@ type Msg
     | QuizFileRequested
     | QuizFileSelected File.File
     | QuizFileLoaded String
-    | ChoiceSelected Choice
+    | ChoiceSelected Question Choice
+    | QuizSubmitted Quiz
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
+
+
+
+{- TODO: refactor this update to pattern match against model first then msg
+   instead of msg firs then model. it will make the code much simple and that
+   is the logical behaviour in our case
+-}
+
+
 update msg model =
     case msg of
         NoOp ->
@@ -58,13 +68,40 @@ update msg model =
             in
             case tryDecode of
                 Ok quiz ->
-                    ( QuizLoaded quiz, Cmd.none )
+                    ( AfterQuizLoading quiz, Cmd.none )
 
                 Err error ->
-                    ( QuizDecodingFailed error, Cmd.none )
+                    ( QuizLoadingFailed error, Cmd.none )
 
-        ChoiceSelected c ->
-            ( model, Cmd.none )
+        ChoiceSelected q c ->
+            case model of
+                BeforeQuizLoading ->
+                    ( model, Cmd.none )
+
+                AfterQuizSubmitted _ ->
+                    ( model, Cmd.none )
+
+                QuizLoadingFailed _ ->
+                    ( model, Cmd.none )
+
+                AfterQuizLoading quiz ->
+                    let
+                        updatedQuestion =
+                            { q | chosenChoice = Just c.id }
+
+                        qToQuizElement =
+                            QuestionElement updatedQuestion
+
+                        updatedQuizElements =
+                            Dict.insert q.id qToQuizElement quiz.quizElements
+
+                        updatedQuiz =
+                            { quiz | quizElements = updatedQuizElements }
+                    in
+                    ( AfterQuizLoading updatedQuiz, Cmd.none )
+
+        QuizSubmitted quiz ->
+            ( AfterQuizSubmitted quiz, Cmd.none )
 
 
 
@@ -74,14 +111,21 @@ update msg model =
 view : Model -> Browser.Document Msg
 view model =
     case model of
-        QuizLoaded quiz ->
+        AfterQuizLoading quiz ->
             { title = quiz.quizTitle, body = viewQuiz quiz }
 
-        BeforeLoadingQuiz ->
+        BeforeQuizLoading ->
             { title = "Selct a quiz file", body = [ viewQuizSelector ] }
 
-        QuizDecodingFailed error ->
+        QuizLoadingFailed error ->
             { title = "Selct a quiz file", body = [ div [] [ text <| D.errorToString error ] ] }
+
+        AfterQuizSubmitted quiz ->
+            { title = quiz.quizTitle ++ "result", body = viewQuizSubmittingResult quiz }
+
+
+
+-- BeforeLoadingQuiz view
 
 
 viewQuizSelector : Html Msg
@@ -94,9 +138,13 @@ viewQuizSelector =
         ]
 
 
+
+-- QuizLoaded view
+
+
 viewQuiz : Quiz -> List (Html Msg)
 viewQuiz quiz =
-    [ viewHeader quiz, viewMain quiz, viewFooter ]
+    [ viewHeader quiz, viewMain quiz, submitButton quiz, viewFooter ]
 
 
 viewHeader : Quiz -> Html Msg
@@ -108,6 +156,11 @@ viewHeader quiz =
 viewMain : Quiz -> Html Msg
 viewMain quiz =
     main_ [] (List.map (\x -> viewElement x) (Dict.values quiz.quizElements))
+
+
+submitButton : Quiz -> Html Msg
+submitButton quiz =
+    button [ Events.onClick (QuizSubmitted quiz) ] [ text "submit" ]
 
 
 viewFooter : Html Msg
@@ -146,10 +199,63 @@ viewChoice c q =
             [ type_ "radio"
             , id c.id
             , name q.id
-            , Events.onClick (ChoiceSelected c)
+            , Events.onClick (ChoiceSelected q c)
             ]
             []
         ]
+
+
+
+-- QuizSubmitted view
+
+
+viewQuizSubmittingResult : Quiz -> List (Html Msg)
+viewQuizSubmittingResult quiz =
+    [ viewPoints quiz ]
+
+
+viewPoints : Quiz -> Html Msg
+viewPoints quiz =
+    div [] [ text <| "your score is " ++ String.fromInt (calculatePoints quiz) ]
+
+
+calculatePoints : Quiz -> Int
+calculatePoints quiz =
+    let
+        questionList =
+            extractQuestionsFromElements (Dict.values quiz.quizElements)
+
+        pointsList =
+            List.map questionToPoint questionList
+    in
+    List.sum pointsList
+
+
+questionToPoint : Question -> Int
+questionToPoint q =
+    {- don't worry the chosenChoice will always be Just String when submitting
+       due to the validation we do before submitting
+    -}
+    if q.rightChoice == Maybe.withDefault "" q.chosenChoice then
+        1
+
+    else
+        0
+
+
+extractQuestionsFromElements : List QuizElement -> List Question
+extractQuestionsFromElements qeList =
+    let
+        elementToQuestion : QuizElement -> Maybe Question
+        elementToQuestion qe =
+            case qe of
+                QuestionElement q ->
+                    Just q
+
+                _ ->
+                    Nothing
+    in
+    List.filterMap elementToQuestion qeList
 
 
 
@@ -189,9 +295,10 @@ type alias Quiz =
 
 
 type Model
-    = BeforeLoadingQuiz
-    | QuizLoaded Quiz
-    | QuizDecodingFailed D.Error
+    = BeforeQuizLoading
+    | AfterQuizLoading Quiz
+    | QuizLoadingFailed D.Error -- i don't json decoding errors expect to happen though
+    | AfterQuizSubmitted Quiz
 
 
 
