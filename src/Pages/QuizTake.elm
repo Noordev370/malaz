@@ -1,6 +1,7 @@
 module Pages.QuizTake exposing (init, main)
 
 import Browser
+import Browser.Dom
 import Dict exposing (Dict)
 import File
 import File.Select
@@ -8,6 +9,7 @@ import Html exposing (..)
 import Html.Attributes as Attributes exposing (class, for, id, name, type_)
 import Html.Events as Events
 import Json.Decode as D exposing (Decoder, field)
+import Platform.Cmd as Cmd
 import Task
 
 
@@ -32,7 +34,7 @@ init () =
 
 
 type Msg
-    = NoOp
+    = Focus (Result Browser.Dom.Error ())
     | QuizFileRequested
     | QuizFileSelected File.File
     | QuizFileLoaded String
@@ -41,18 +43,9 @@ type Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-
-
-
-{- TODO: refactor this update to pattern match against model first then msg
-   instead of msg firs then model. it will make the code much simple and that
-   is the logical behaviour in our case
--}
-
-
 update msg model =
     case msg of
-        NoOp ->
+        Focus _ ->
             ( model, Cmd.none )
 
         QuizFileRequested ->
@@ -75,15 +68,6 @@ update msg model =
 
         ChoiceSelected q c ->
             case model of
-                BeforeQuizLoading ->
-                    ( model, Cmd.none )
-
-                AfterQuizSubmitted _ ->
-                    ( model, Cmd.none )
-
-                QuizLoadingFailed _ ->
-                    ( model, Cmd.none )
-
                 AfterQuizLoading quiz ->
                     let
                         updatedQuestion =
@@ -100,8 +84,32 @@ update msg model =
                     in
                     ( AfterQuizLoading updatedQuiz, Cmd.none )
 
+                _ ->
+                    ( model, Cmd.none )
+
         QuizSubmitted quiz ->
-            ( AfterQuizSubmitted quiz, Cmd.none )
+            {- if all question answered switch to AfterQuizSubmitted model
+               if not focus on the first element of unanswered questions
+            -}
+            let
+                qList =
+                    extractQuestionsFromElements (Dict.values quiz.quizElements)
+
+                unAnsweredQuestions =
+                    getUnAnsweredQuestions qList
+            in
+            if List.isEmpty unAnsweredQuestions then
+                ( AfterQuizSubmitted quiz, Cmd.none )
+
+            else
+                ( model
+                , case List.head unAnsweredQuestions of
+                    Nothing ->
+                        Cmd.none
+
+                    Just q ->
+                        focusElementByID q.id
+                )
 
 
 
@@ -185,7 +193,7 @@ viewSection s =
 
 viewQuestion : Question -> Html Msg
 viewQuestion q =
-    div [ class "question", id q.id ]
+    div [ class "question", id q.id, Attributes.tabindex 1 ]
         [ h4 [ class "Qtext" ] [ text q.question ]
         , div [ class "Qchoices" ] (List.map (\x -> viewChoice x q) (Dict.values q.choices))
         ]
@@ -243,21 +251,6 @@ questionToPoint q =
         0
 
 
-extractQuestionsFromElements : List QuizElement -> List Question
-extractQuestionsFromElements qeList =
-    let
-        elementToQuestion : QuizElement -> Maybe Question
-        elementToQuestion qe =
-            case qe of
-                QuestionElement q ->
-                    Just q
-
-                _ ->
-                    Nothing
-    in
-    List.filterMap elementToQuestion qeList
-
-
 
 -- Types
 
@@ -297,7 +290,7 @@ type alias Quiz =
 type Model
     = BeforeQuizLoading
     | AfterQuizLoading Quiz
-    | QuizLoadingFailed D.Error -- i don't json decoding errors expect to happen though
+    | QuizLoadingFailed D.Error -- i don't expect json decoding errors to happen though
     | AfterQuizSubmitted Quiz
 
 
@@ -337,3 +330,37 @@ quizElementDecoder =
 quizDecoder : Decoder Quiz
 quizDecoder =
     D.map2 Quiz (field "quizTitle" D.string) (field "quizElements" (D.dict quizElementDecoder))
+
+
+
+-- helpers
+
+
+extractQuestionsFromElements : List QuizElement -> List Question
+extractQuestionsFromElements qeList =
+    let
+        elementToQuestion : QuizElement -> Maybe Question
+        elementToQuestion qe =
+            case qe of
+                QuestionElement q ->
+                    Just q
+
+                _ ->
+                    Nothing
+    in
+    List.filterMap elementToQuestion qeList
+
+
+focusElementByID : String -> Cmd Msg
+focusElementByID el =
+    Task.attempt Focus (Browser.Dom.focus el)
+
+
+getUnAnsweredQuestions : List Question -> List Question
+getUnAnsweredQuestions qList =
+    let
+        isQuestionUnAnswered : Question -> Bool
+        isQuestionUnAnswered q =
+            q.chosenChoice == Nothing
+    in
+    List.filter isQuestionUnAnswered qList

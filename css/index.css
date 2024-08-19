@@ -15,3 +15,14 @@ header{
 
 .QE-sec{
 }
+
+.question{
+    border-color: blueviolet;
+    border-style: solid;
+    border-width: 5px;
+    margin-bottom: 10px;
+}
+
+.question:focus{
+    background-color: lightblue;
+}
