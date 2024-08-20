@@ -1,3 +1,13 @@
+.elm-popup {
+    position: absolute;
+    top: 50%;
+    right: 45%;
+    border-style: solid;
+    border-width: 3px;
+    border-color: red;
+    padding: 5px;
+}
+
 header{
     margin-top: 40px;
 }

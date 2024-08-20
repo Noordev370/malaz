@@ -1,4 +1,4 @@
-module Pages.QuizEditor exposing (Model, init, update, view)
+module Pages.QuizEditor exposing (Model, init, update, view,main)
 
 import Browser
 import Dict exposing (Dict)
@@ -7,6 +7,8 @@ import Html exposing (..)
 import Html.Attributes exposing (class, id, name, type_, value)
 import Html.Events as Events
 import Json.Encode as Encode
+import Process
+import Task
 
 
 main : Program () Model Msg
@@ -21,7 +23,7 @@ main =
 
 initModel : Model
 initModel =
-    Model "quiz 1" Dict.empty Nothing
+    Model "quiz 1" Dict.empty Nothing Nothing
 
 
 init : () -> ( Model, Cmd Msg )
@@ -42,7 +44,7 @@ type Msg
     | DeleteChoice Question Choice
     | SetRightChoice Question Choice
     | SaveToFile
-    | ChangeTheme
+    | RemovePopup ()
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -175,15 +177,26 @@ update msg model =
             ( { model | quizElements = updatedQuizElements }, Cmd.none )
 
         -- others
-        ChangeTheme ->
-            ( model, Cmd.none )
-
         SaveToFile ->
             let
                 fileName =
                     model.quizTitle ++ ".json"
             in
-            ( model, Download.string fileName "text/json" (generateJson model) )
+            if not (isQuestionFound model) then
+                ( { model | popup = Just (Popup "you forgot to add questions") }
+                , waitThenRemovePopup
+                )
+
+            else if not (isAllQuestionsHaveChoices model) then
+                ( { model | popup = Just (Popup "check that all questions have choices") }
+                , waitThenRemovePopup
+                )
+
+            else
+                ( model, Download.string fileName "text/json" (generateJson model) )
+
+        RemovePopup _ ->
+            ( { model | popup = Nothing }, Cmd.none )
 
 
 
@@ -193,7 +206,7 @@ update msg model =
 view : Model -> Browser.Document Msg
 view model =
     { title = "Malaz Quiz Editor"
-    , body = [ viewToolbar, viewHeader model, viewMain model, viewFooter ]
+    , body = [ viewToolbar, viewHeader model, viewMain model, viewFooter, viewPopup model.popup ]
     }
 
 
@@ -202,7 +215,6 @@ viewToolbar =
     div [ class "toolbar" ]
         [ viewQuestionCreationButton
         , viewSectionCreationButton
-        , viewThemeChangeButton
         , viewSaveButton
         ]
 
@@ -215,11 +227,6 @@ viewSectionCreationButton =
 viewQuestionCreationButton : Html Msg
 viewQuestionCreationButton =
     button [ Events.onClick InsertQuestion ] [ text "i question" ]
-
-
-viewThemeChangeButton : Html Msg
-viewThemeChangeButton =
-    button [ Events.onClick ChangeTheme ] [ text "change theme" ]
 
 
 viewSaveButton : Html Msg
@@ -306,6 +313,16 @@ viewChoice c q =
         ]
 
 
+viewPopup : Maybe Popup -> Html Msg
+viewPopup popup =
+    case popup of
+        Nothing ->
+            text ""
+
+        Just (Popup str) ->
+            div [ class "elm-popup" ] [ text str ]
+
+
 
 -- Types
 
@@ -343,7 +360,12 @@ type alias Model =
     { quizTitle : String
     , quizElements : Dict Int QuizElement -- Int is the id of the Question or Section
     , lastIndex : Maybe Int -- maybe nothing in case ther is no elements, the index starts from 0 .
+    , popup : Maybe Popup
     }
+
+
+type Popup
+    = Popup String
 
 
 
@@ -464,19 +486,41 @@ isQuestionFound model =
         List.member True boolList
 
 
-isChoiceFound : Question -> Bool
-isChoiceFound q =
+isChoiceNotFound : Question -> Bool
+isChoiceNotFound q =
     Dict.isEmpty q.choices
 
 
-isRightChoiceChosen : Question -> Bool
-isRightChoiceChosen q =
-    case q.rightChoice of
-        Just _ ->
-            True
+questionsWithNoChoices : List Question -> List Question
+questionsWithNoChoices qList =
+    List.filter isChoiceNotFound qList
 
-        Nothing ->
-            False
+
+isAllQuestionsHaveChoices : Model -> Bool
+isAllQuestionsHaveChoices model =
+    let
+        qList =
+            extractQuestionsFromElements (Dict.values model.quizElements)
+
+        qWithNoChoices =
+            questionsWithNoChoices qList
+    in
+    List.isEmpty qWithNoChoices
+
+
+extractQuestionsFromElements : List QuizElement -> List Question
+extractQuestionsFromElements qeList =
+    let
+        elementToQuestion : QuizElement -> Maybe Question
+        elementToQuestion qe =
+            case qe of
+                QuestionElement q ->
+                    Just q
+
+                _ ->
+                    Nothing
+    in
+    List.filterMap elementToQuestion qeList
 
 
 
@@ -545,3 +589,12 @@ modelEncoder model =
 generateJson : Model -> String
 generateJson model =
     Encode.encode 1 (modelEncoder model)
+
+
+
+-- commands
+
+
+waitThenRemovePopup : Cmd Msg
+waitThenRemovePopup =
+    Task.perform RemovePopup (Process.sleep 1800)
