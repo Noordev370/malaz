@@ -6,8 +6,8 @@ import Browser exposing (UrlRequest)
 import Browser.Navigation as Nav
 import Html exposing (..)
 import Pages.FrontPage as FrontPage
-import Pages.QuizEditor as QuizEditor
-import Pages.QuizTake as QuizTake
+import Pages.QuizEditor as QuizEditorPage
+import Pages.QuizTake as QuizTakePage
 import Url
 
 
@@ -27,10 +27,10 @@ init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init () url key =
     ( Model key
         url
-        FrontPage
+        Frontpage
         FrontPage.initModel
-        QuizEditor.initModel
-        QuizTake.initModel
+        QuizEditorPage.initModel
+        QuizTakePage.initModel
     , Cmd.none
     )
 
@@ -39,6 +39,9 @@ type Msg
     = NoOp
     | LinkClicked Browser.UrlRequest
     | URLChanged Url.Url
+    | Front FrontPage.Msg
+    | QuizEditor QuizEditorPage.Msg
+    | QuizTake QuizTakePage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -58,23 +61,40 @@ update msg model =
         URLChanged url ->
             ( { model | url = url }, Cmd.none )
 
+        _ ->
+            ( model, Cmd.none )
 
-view : Model -> Browser.Document msg
+
+view : Model -> Browser.Document Msg
 view model =
-    { title = "", body = [ div [] [] ] }
+    case model.page of
+        Frontpage ->
+            { title = FrontPage.title
+            , body = [ Html.map Front FrontPage.view ]
+            }
+
+        QuizEditorpage ->
+            { title = QuizEditorPage.title
+            , body = [ Html.map QuizEditor (QuizEditorPage.view model.quizEditorModel) ]
+            }
+
+        QuizTakepage ->
+            { title = QuizTakePage.title model.quizTakeModel
+            , body = [ Html.map QuizTake (QuizTakePage.view model.quizTakeModel) ]
+            }
 
 
 type alias Model =
     { key : Nav.Key
     , url : Url.Url
-    , page : Page
+    , page : CurrentPage
     , frontModel : FrontPage.Model
-    , quizEditorModel : QuizEditor.Model
-    , quizTakeModel : QuizTake.Model
+    , quizEditorModel : QuizEditorPage.Model
+    , quizTakeModel : QuizTakePage.Model
     }
 
 
-type Page
-    = FrontPage
-    | QuizEditorPage
-    | QuizTakePage
+type CurrentPage
+    = Frontpage
+    | QuizEditorpage
+    | QuizTakepage

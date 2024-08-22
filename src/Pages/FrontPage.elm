@@ -1,16 +1,15 @@
-module Pages.FrontPage exposing (Model, initModel, main)
+module Pages.FrontPage exposing (Model, Msg, initModel, title, update, view)
 
 import Browser
 import Html exposing (..)
 import Html.Attributes as Attributes
-import Html.Events as Events
 
 
 main : Program () Model Msg
 main =
     Browser.document
         { init = init
-        , view = view
+        , view = viewDocument
         , update = update
         , subscriptions = \_ -> Sub.none
         }
@@ -37,9 +36,18 @@ update msg model =
             ( model, Cmd.none )
 
 
-view : Model -> Browser.Document Msg
-view model =
-    { title = "Welcome To Malaz", body = [ viewHeader, viewMain, viewFooter ] }
+viewDocument : Model -> Browser.Document Msg
+viewDocument _ =
+    { title = "Welcome To Malaz", body = [ view ] }
+
+
+title =
+    "Welcome To Malaz"
+
+
+view : Html Msg
+view =
+    div [] [ viewHeader, viewMain, viewFooter ]
 
 
 viewHeader : Html Msg

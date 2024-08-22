@@ -1,4 +1,4 @@
-module Pages.QuizTake exposing (Model, initModel, main)
+module Pages.QuizTake exposing (Model, Msg, initModel, title, view)
 
 import Browser
 import Browser.Dom
@@ -17,7 +17,7 @@ main : Program () Model Msg
 main =
     Browser.document
         { init = init
-        , view = view
+        , view = viewDocument
         , update = update
         , subscriptions = \_ -> Sub.none
         }
@@ -116,20 +116,41 @@ update msg model =
 -- view
 
 
-view : Model -> Browser.Document Msg
+viewDocument : Model -> Browser.Document Msg
+viewDocument model =
+    { title = title model, body = [ view model ] }
+
+
+title : Model -> String
+title model =
+    case model of
+        AfterQuizLoading quiz ->
+            quiz.quizTitle
+
+        BeforeQuizLoading ->
+            "Selct a quiz file"
+
+        QuizLoadingFailed _ ->
+            "Selct a quiz file"
+
+        AfterQuizSubmitted quiz ->
+            quiz.quizTitle ++ "result"
+
+
+view : Model -> Html Msg
 view model =
     case model of
         AfterQuizLoading quiz ->
-            { title = quiz.quizTitle, body = viewQuiz quiz }
+            viewQuiz quiz
 
         BeforeQuizLoading ->
-            { title = "Selct a quiz file", body = [ viewQuizSelector ] }
+            viewQuizSelector
 
         QuizLoadingFailed error ->
-            { title = "Selct a quiz file", body = [ div [] [ text <| D.errorToString error ] ] }
+            div [] [ text <| D.errorToString error ]
 
         AfterQuizSubmitted quiz ->
-            { title = quiz.quizTitle ++ "result", body = viewQuizSubmittingResult quiz }
+            viewQuizSubmittingResult quiz
 
 
 
@@ -150,9 +171,9 @@ viewQuizSelector =
 -- QuizLoaded view
 
 
-viewQuiz : Quiz -> List (Html Msg)
+viewQuiz : Quiz -> Html Msg
 viewQuiz quiz =
-    [ viewHeader quiz, viewMain quiz, submitButton quiz, viewFooter ]
+    div [] [ viewHeader quiz, viewMain quiz, submitButton quiz, viewFooter ]
 
 
 viewHeader : Quiz -> Html Msg
@@ -217,9 +238,9 @@ viewChoice c q =
 -- QuizSubmitted view
 
 
-viewQuizSubmittingResult : Quiz -> List (Html Msg)
+viewQuizSubmittingResult : Quiz -> Html Msg
 viewQuizSubmittingResult quiz =
-    [ viewPoints quiz ]
+    viewPoints quiz
 
 
 viewPoints : Quiz -> Html Msg

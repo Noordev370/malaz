@@ -1,4 +1,4 @@
-module Pages.QuizEditor exposing (Model, initModel, main, update, view)
+module Pages.QuizEditor exposing (Model, Msg, initModel, title, update, view)
 
 import Browser
 import Dict exposing (Dict)
@@ -15,7 +15,7 @@ main : Program () Model Msg
 main =
     Browser.document
         { init = init
-        , view = view
+        , view = viewDocument
         , update = update
         , subscriptions = \_ -> Sub.none
         }
@@ -203,11 +203,20 @@ update msg model =
 -- view
 
 
-view : Model -> Browser.Document Msg
-view model =
-    { title = "Malaz Quiz Editor"
-    , body = [ viewToolbar, viewHeader model, viewMain model, viewFooter, viewPopup model.popup ]
+viewDocument : Model -> Browser.Document Msg
+viewDocument model =
+    { title = title
+    , body = [ view model ]
     }
+
+
+title =
+    "Malaz Quiz Editor"
+
+
+view : Model -> Html Msg
+view model =
+    div [] [ viewToolbar, viewHeader model, viewMain model, viewFooter, viewPopup model.popup ]
 
 
 viewToolbar : Html Msg
