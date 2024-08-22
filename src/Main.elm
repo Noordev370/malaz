@@ -2,7 +2,7 @@ module Main exposing (..)
 
 --
 
-import Browser exposing (UrlRequest)
+import Browser
 import Browser.Navigation as Nav
 import Html exposing (..)
 import Pages.FrontPage as FrontPage
@@ -67,7 +67,7 @@ update msg model =
 
 view : Model -> Browser.Document Msg
 view model =
-    case model.page of
+    case model.currentPage of
         Frontpage ->
             { title = FrontPage.title
             , body = [ Html.map Front FrontPage.view ]
@@ -87,7 +87,7 @@ view model =
 type alias Model =
     { key : Nav.Key
     , url : Url.Url
-    , page : CurrentPage
+    , currentPage : CurrentPage
     , frontModel : FrontPage.Model
     , quizEditorModel : QuizEditorPage.Model
     , quizTakeModel : QuizTakePage.Model
