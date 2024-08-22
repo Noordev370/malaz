@@ -1,4 +1,4 @@
-module Pages.QuizTake exposing (Model, Msg, initModel, title, view)
+module Pages.QuizTake exposing (Model, Msg, initModel, title, update, view)
 
 import Browser
 import Browser.Dom
