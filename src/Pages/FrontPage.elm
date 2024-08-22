@@ -1,8 +1,8 @@
-module Pages.FrontPage exposing (Msg(..), init, main)
+module Pages.FrontPage exposing (Model, initModel, main)
 
 import Browser
 import Html exposing (..)
-import Html.Attributes exposing (class, href)
+import Html.Attributes as Attributes
 import Html.Events as Events
 
 
@@ -50,8 +50,9 @@ viewHeader =
 viewMain : Html Msg
 viewMain =
     main_ []
-        [ a [] [ text "make a quiz" ]
-        , a [] [ text "take a quiz" ]
+        [ a [ Attributes.href "/editor" ] [ text "make a quiz" ]
+        , br [] []
+        , a [ Attributes.href "/take" ] [ text "take a quiz" ]
         ]
 
 

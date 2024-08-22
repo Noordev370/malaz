@@ -1,4 +1,4 @@
-module Pages.QuizEditor exposing (Model, init, update, view,main)
+module Pages.QuizEditor exposing (Model, initModel, main, update, view)
 
 import Browser
 import Dict exposing (Dict)

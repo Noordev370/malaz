@@ -1,3 +1,4 @@
+/* common styles*/
 .elm-popup {
     position: absolute;
     top: 50%;
@@ -7,6 +8,11 @@
     border-color: red;
     padding: 5px;
 }
+
+/* FrontPage styles*/
+
+
+/* QuizEditor styles*/
 
 header{
     margin-top: 40px;
@@ -36,3 +42,5 @@ header{
 .question:focus{
     background-color: lightblue;
 }
+
+/* QuizTake styles*/
