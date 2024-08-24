@@ -6,6 +6,8 @@ import File.Download as Download
 import Html exposing (..)
 import Html.Attributes exposing (class, id, name, type_, value)
 import Html.Events as Events
+import Html.Keyed as Keyed
+import Html.Lazy exposing (lazy, lazy2)
 import Json.Encode as Encode
 import Process
 import Task
@@ -216,7 +218,7 @@ title =
 
 view : Model -> Html Msg
 view model =
-    div [] [ viewToolbar, viewHeader model, viewMain model, viewFooter, viewPopup model.popup ]
+    div [] [ viewToolbar, lazy viewHeader model, lazy viewMain model, viewFooter, lazy viewPopup model.popup ]
 
 
 viewToolbar : Html Msg
@@ -257,7 +259,7 @@ viewHeader model =
 
 viewMain : Model -> Html Msg
 viewMain model =
-    main_ [] (List.map (\x -> viewElement x) (Dict.values model.quizElements))
+    Keyed.node "main" [] (List.map (\x -> viewKeyedElement x) (Dict.values model.quizElements))
 
 
 viewFooter : Html Msg
@@ -265,29 +267,39 @@ viewFooter =
     footer [] [ h3 [] [ text "Malaz" ], text "by Noor Eldeen" ]
 
 
-viewElement : QuizElement -> Html Msg
-viewElement e =
+viewKeyedElement : QuizElement -> ( String, Html Msg )
+viewKeyedElement e =
     case e of
         SectionElement section ->
-            viewSection section
+            viewKeyedSection section
 
         QuestionElement question ->
-            viewQuestion question
+            viewKeyedQuestion question
+
+
+viewKeyedSection : Section -> ( String, Html Msg )
+viewKeyedSection s =
+    ( String.fromInt s.id, lazy viewSection s )
 
 
 viewSection : Section -> Html Msg
-viewSection section =
+viewSection s =
     div []
         [ input
             [ type_ "text"
-            , value section.title
+            , value s.title
             , class "QE-sec"
-            , id (getSectionIDStr section)
-            , Events.onInput (ChangeSection section)
+            , id (getSectionIDStr s)
+            , Events.onInput (ChangeSection s)
             ]
             []
-        , button [ Events.onClick (DeleteSection section) ] [ text "X" ]
+        , button [ Events.onClick (DeleteSection s) ] [ text "X" ]
         ]
+
+
+viewKeyedQuestion : Question -> ( String, Html Msg )
+viewKeyedQuestion q =
+    ( String.fromInt q.id, lazy viewQuestion q )
 
 
 viewQuestion : Question -> Html Msg
@@ -301,11 +313,16 @@ viewQuestion q =
             ]
             []
         , button [ Events.onClick (DeleteQuestion q) ] [ text "X" ]
-        , div [ class "Qchoices" ] (List.map (\x -> viewChoice x q) (Dict.values q.choices))
+        , Keyed.node "div" [ class "Qchoices" ] (List.map (viewKeyedChoice q) (Dict.values q.choices))
         , div [ class "one-more-choice" ]
             [ button [ Events.onClick (InsertChoice q) ] [ text "+ choice" ]
             ]
         ]
+
+
+viewKeyedChoice : Question -> Choice -> ( String, Html Msg )
+viewKeyedChoice c q =
+    ( getChoiceIDStr c q, lazy2 viewChoice q c )
 
 
 viewChoice : Choice -> Question -> Html Msg

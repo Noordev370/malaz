@@ -8,8 +8,8 @@ import File.Select
 import Html exposing (..)
 import Html.Attributes as Attributes exposing (class, for, id, name, type_)
 import Html.Events as Events
+import Html.Lazy exposing (lazy)
 import Json.Decode as D exposing (Decoder, field)
-import Platform.Cmd as Cmd
 import Task
 
 
@@ -173,7 +173,7 @@ viewQuizSelector =
 
 viewQuiz : Quiz -> Html Msg
 viewQuiz quiz =
-    div [] [ viewHeader quiz, viewMain quiz, submitButton quiz, viewFooter ]
+    div [] [ lazy viewHeader quiz, lazy viewMain quiz, lazy submitButton quiz, viewFooter ]
 
 
 viewHeader : Quiz -> Html Msg
@@ -201,10 +201,10 @@ viewElement : QuizElement -> Html Msg
 viewElement e =
     case e of
         SectionElement section ->
-            viewSection section
+            lazy viewSection section
 
         QuestionElement question ->
-            viewQuestion question
+            lazy viewQuestion question
 
 
 viewSection : Section -> Html Msg
@@ -216,12 +216,12 @@ viewQuestion : Question -> Html Msg
 viewQuestion q =
     div [ class "question", id q.id, Attributes.tabindex 1 ]
         [ h4 [ class "Qtext" ] [ text q.question ]
-        , div [ class "Qchoices" ] (List.map (\x -> viewChoice x q) (Dict.values q.choices))
+        , div [ class "Qchoices" ] (List.map (viewChoice q) (Dict.values q.choices))
         ]
 
 
-viewChoice : Choice -> Question -> Html Msg
-viewChoice c q =
+viewChoice : Question -> Choice -> Html Msg
+viewChoice q c =
     div [ class "Qchoice" ]
         [ label [ for c.id ] [ text c.choice ]
         , input
