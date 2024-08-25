@@ -25,7 +25,7 @@ main =
 
 initModel : Model
 initModel =
-    Model "quiz 1" Dict.empty Nothing Nothing
+    Model "New Quiz" Dict.empty Nothing Nothing
 
 
 init : () -> ( Model, Cmd Msg )
@@ -59,7 +59,7 @@ update msg model =
         InsertSection ->
             let
                 addedSection =
-                    Section "New Section" (getNextElementID model)
+                    Section "New Section ....." (getNextElementID model)
 
                 updatedModel =
                     addSectionToQuiz addedSection model
@@ -218,7 +218,7 @@ title =
 
 view : Model -> Html Msg
 view model =
-    div [] [ viewToolbar, lazy viewHeader model, lazy viewMain model, viewFooter, lazy viewPopup model.popup ]
+    div [ class "QE" ] [ viewToolbar, lazy viewHeader model, lazy viewMain model, lazy viewPopup model.popup ]
 
 
 viewToolbar : Html Msg
@@ -247,7 +247,7 @@ viewSaveButton =
 
 viewHeader : Model -> Html Msg
 viewHeader model =
-    header []
+    header [ class "center-txt" ]
         [ input
             [ type_ "textbox"
             , Events.onInput ChangeQuizTitle
@@ -259,12 +259,9 @@ viewHeader model =
 
 viewMain : Model -> Html Msg
 viewMain model =
-    Keyed.node "main" [] (List.map (\x -> viewKeyedElement x) (Dict.values model.quizElements))
-
-
-viewFooter : Html Msg
-viewFooter =
-    footer [] [ h3 [] [ text "Malaz" ], text "by Noor Eldeen" ]
+    Keyed.node "main"
+        [ class "center-page" ]
+        (List.map (\x -> viewKeyedElement x) (Dict.values model.quizElements))
 
 
 viewKeyedElement : QuizElement -> ( String, Html Msg )
@@ -284,11 +281,11 @@ viewKeyedSection s =
 
 viewSection : Section -> Html Msg
 viewSection s =
-    div []
+    div [ class "QE-section" ]
         [ input
             [ type_ "text"
+            , class "Stext"
             , value s.title
-            , class "QE-sec"
             , id (getSectionIDStr s)
             , Events.onInput (ChangeSection s)
             ]
@@ -304,7 +301,7 @@ viewKeyedQuestion q =
 
 viewQuestion : Question -> Html Msg
 viewQuestion q =
-    div [ class "question", id (getQuestionIDStr q) ]
+    div [ class "QE-question", id (getQuestionIDStr q) ]
         [ input
             [ type_ "text"
             , class "Qtext"

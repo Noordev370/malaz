@@ -173,7 +173,7 @@ viewQuizSelector =
 
 viewQuiz : Quiz -> Html Msg
 viewQuiz quiz =
-    div [] [ lazy viewHeader quiz, lazy viewMain quiz, lazy submitButton quiz, viewFooter ]
+    div [ class "QT" ] [ lazy viewHeader quiz, lazy viewMain quiz, lazy submitButton quiz, viewFooter ]
 
 
 viewHeader : Quiz -> Html Msg

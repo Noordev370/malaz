@@ -2,7 +2,7 @@ module Pages.FrontPage exposing (Model, Msg, initModel, title, update, view)
 
 import Browser
 import Html exposing (..)
-import Html.Attributes as Attributes
+import Html.Attributes as Attributes exposing (class)
 
 
 main : Program () Model Msg
@@ -47,26 +47,25 @@ title =
 
 view : Html Msg
 view =
-    div [] [ viewHeader, viewMain, viewFooter ]
+    div [ class "center-page", class "QF" ] [ viewHeader, viewMain, viewFooter ]
 
 
 viewHeader : Html Msg
 viewHeader =
-    header [] [ h1 [] [ text "Welcome" ] ]
+    header [ class "center-txt" ] [ h1 [] [ text "Welcome" ] ]
 
 
 viewMain : Html Msg
 viewMain =
     main_ []
         [ a [ Attributes.href "/editor" ] [ text "make a quiz" ]
-        , br [] []
         , a [ Attributes.href "/take" ] [ text "take a quiz" ]
         ]
 
 
 viewFooter : Html Msg
 viewFooter =
-    footer [] [ h3 [] [ text "Malaz" ], text "by Noor Eldeen" ]
+    footer [ class "center-txt" ] [ h3 [] [ text "Malaz" ], text "by Noor Eldeen" ]
 
 
 type Model

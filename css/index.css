@@ -1,4 +1,36 @@
 /* common styles*/
+
+:root {
+    --bg-color: rgb(209, 196, 233);
+    --question-font-size: 1em;
+    --question-bg-color: whitesmoke;
+    /*******************/
+    --section-font-size: 1em;
+    --choice-font-size: 1em;
+
+}
+
+
+body {
+    background-color: var(--bg-color);
+}
+
+
+a {
+    color: rgb(60, 64, 67);
+    text-decoration: none;
+}
+
+
+.center-page {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.center-txt {
+    text-align: center;
+}
+
 .elm-popup {
     position: absolute;
     top: 50%;
@@ -9,38 +41,125 @@
     padding: 5px;
 }
 
+
 /* FrontPage styles*/
+
+
+.QF>main>a {
+    display: block;
+    border-style: solid;
+    border-color: grey;
+    border-width: 3px;
+    padding: 0.5em;
+}
+
+.QF>main>a:hover {
+    font-size: 1.2em;
+    border-width: 5px;
+}
+
+.QF>main {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    padding: 1em;
+}
+
+
+
 
 
 /* QuizEditor styles*/
 
-header{
-    margin-top: 40px;
+.QE header {
+    margin-top: clamp(45px, 20vh, 80px);
+    margin-bottom: 2em;
 }
 
-.toolbar{
+.toolbar {
     position: fixed;
     top: 0px;
+    left: 0px;
+    border-color: whitesmoke;
     display: flex;
     flex-direction: row;
     justify-content: space-around;
-    background-color: cyan;
-    height: 30px;
+    align-items: center;
+    background-color: whitesmoke;
+    height: clamp(40px, 20vh, 70px);
     width: 100%;
 }
 
-.QE-sec{
+.toolbar button {
+    display: block;
+    font-size: 1em;
+    padding: 0.8em;
 }
 
-.question{
-    border-color: blueviolet;
-    border-style: solid;
-    border-width: 5px;
-    margin-bottom: 10px;
+.QE > header > input{
+    font-size: 2em;
+    background-color: whitesmoke;
+    border-radius: 15px;
+    border-top-width: 20px;
+    border-top-style: groove;
+    border-top-color: blueviolet;
+    outline: none;
+    border-bottom-style: groove;
+    padding: 1em;
+    width: clamp(100px, 60%, 600px);
+    height: 1.5em;
 }
 
-.question:focus{
+.QE-section .Stext {
+    font-size: var(--section-font-size);
+    background-color: whitesmoke;
+    border: none;
+    outline: none;
+    border-bottom-style: groove;
+    padding: 0.5em;
+    margin-right: 0.2em;
+    width: clamp(80px, 30%, 400px);
+    height: 1em;
+}
+
+.QE-section button {
+    font-size: 1.1em;
+}
+
+.QE-question {
+    background-color: var(--question-bg-color);
+    border-radius: 15px;
+    padding: 1em;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+.QE-question:focus {
     background-color: lightblue;
 }
 
+.QE-question .Qtext {
+    font-size: var(--question-font-size);
+    background-color: inherit;
+    border: none;
+    outline: none;
+    border-bottom-style: groove;
+    margin-right: 0.2em;
+    margin-bottom: 1em;
+    padding: 0.2em;
+    width: clamp(100px, 80%, 800px);
+    height: 1em;
+}
+
+.QE-question .Qchoices {}
+
+.QE-question button {
+    font-size: 1.1em;
+}
+
+
 /* QuizTake styles*/
+
+.QT-question:focus {
+    background-color: lightblue;
+}
