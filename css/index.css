@@ -2,10 +2,10 @@
 
 :root {
     --bg-color: rgb(209, 196, 233);
-    --question-font-size: 1em;
+    --question-font-size: 1.2em;
     --question-bg-color: whitesmoke;
     /*******************/
-    --section-font-size: 1em;
+    --section-font-size: 1.2em;
     --choice-font-size: 1em;
 
 }
@@ -106,19 +106,26 @@ a {
     outline: none;
     border-bottom-style: groove;
     padding: 1em;
-    width: clamp(100px, 60%, 600px);
+    width: clamp(100px, 70%, 800px);
     height: 1.5em;
+}
+
+.QE-section {
+    background-color: var(--question-bg-color);
+    border-radius: 15px;
+    padding: 1em;
+    margin-bottom: 1em;
 }
 
 .QE-section .Stext {
     font-size: var(--section-font-size);
-    background-color: whitesmoke;
+    background-color: inherit;
     border: none;
     outline: none;
     border-bottom-style: groove;
     padding: 0.5em;
     margin-right: 0.2em;
-    width: clamp(80px, 30%, 400px);
+    width: clamp(100px, 85%, 860px);
     height: 1em;
 }
 
@@ -147,11 +154,27 @@ a {
     margin-right: 0.2em;
     margin-bottom: 1em;
     padding: 0.2em;
-    width: clamp(100px, 80%, 800px);
+    width: clamp(100px, 85%, 850px);
     height: 1em;
 }
 
-.QE-question .Qchoices {}
+.QE-choice .Ctext {
+    font-size: var(--choice-font-size);
+    background-color: inherit;
+    border-style: solid;
+    border-color: lightgrey;
+    border-width: 5px;
+    margin-bottom: 1em;
+    padding: 0.2em;
+    width: clamp(100px, 50%, 500px);
+    height: 1.5em;
+}
+
+.QE-choice .Cradio {
+    width: 25px;
+    height: 25px;
+    margin-right: 15px;
+}
 
 .QE-question button {
     font-size: 1.1em;

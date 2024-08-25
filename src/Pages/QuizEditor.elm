@@ -310,7 +310,7 @@ viewQuestion q =
             ]
             []
         , button [ Events.onClick (DeleteQuestion q) ] [ text "X" ]
-        , Keyed.node "div" [ class "Qchoices" ] (List.map (viewKeyedChoice q) (Dict.values q.choices))
+        , Keyed.node "div" [ class "QE-choices" ] (List.map (viewKeyedChoice q) (Dict.values q.choices))
         , div [ class "one-more-choice" ]
             [ button [ Events.onClick (InsertChoice q) ] [ text "+ choice" ]
             ]
@@ -324,10 +324,11 @@ viewKeyedChoice c q =
 
 viewChoice : Choice -> Question -> Html Msg
 viewChoice c q =
-    div [ class "Qchoice", id (getChoiceIDStr q c) ]
-        [ input [ type_ "text", value c.choice, Events.onInput (ChangeChoice q c) ] []
+    div [ class "QE-choice", id (getChoiceIDStr q c) ]
+        [ input [ class "Ctext", type_ "text", value c.choice, Events.onInput (ChangeChoice q c) ] []
         , input
             [ type_ "radio"
+            , class "Cradio"
             , name (getQuestionIDStr q)
             , Events.onClick (SetRightChoice q c)
             ]
