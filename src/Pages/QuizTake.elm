@@ -159,7 +159,7 @@ view model =
 
 viewQuizSelector : Html Msg
 viewQuizSelector =
-    div []
+    div [ class "QTS" ]
         [ label [] [ text "choose .quiz file" ]
         , br [] []
         , button [ type_ "file", Attributes.accept ".quiz", Events.onClick QuizFileRequested ]
@@ -173,12 +173,12 @@ viewQuizSelector =
 
 viewQuiz : Quiz -> Html Msg
 viewQuiz quiz =
-    div [ class "QT" ] [ lazy viewHeader quiz, lazy viewMain quiz, lazy submitButton quiz, viewFooter ]
+    div [ class "QTT center-page" ] [ lazy viewHeader quiz, lazy viewMain quiz, lazy submitButton quiz ]
 
 
 viewHeader : Quiz -> Html Msg
 viewHeader quiz =
-    header []
+    header [ class "center-txt" ]
         [ h1 [] [ text quiz.quizTitle ] ]
 
 
@@ -190,11 +190,6 @@ viewMain quiz =
 submitButton : Quiz -> Html Msg
 submitButton quiz =
     button [ Events.onClick (QuizSubmitted quiz) ] [ text "submit" ]
-
-
-viewFooter : Html Msg
-viewFooter =
-    footer [] [ h3 [] [ text "Malaz" ], text "by Noor Eldeen" ]
 
 
 viewElement : QuizElement -> Html Msg
@@ -209,12 +204,12 @@ viewElement e =
 
 viewSection : Section -> Html Msg
 viewSection s =
-    h3 [ class "QE-sec", id s.id ] [ text s.title ]
+    h3 [ class "QTT-section", id s.id ] [ text s.title ]
 
 
 viewQuestion : Question -> Html Msg
 viewQuestion q =
-    div [ class "question", id q.id, Attributes.tabindex 1 ]
+    div [ class "QTT-question", id q.id, Attributes.tabindex 1 ]
         [ h4 [ class "Qtext" ] [ text q.question ]
         , div [ class "Qchoices" ] (List.map (viewChoice q) (Dict.values q.choices))
         ]
@@ -223,9 +218,10 @@ viewQuestion q =
 viewChoice : Question -> Choice -> Html Msg
 viewChoice q c =
     div [ class "Qchoice" ]
-        [ label [ for c.id ] [ text c.choice ]
+        [ label [ for c.id, class "Ctext" ] [ text c.choice ]
         , input
             [ type_ "radio"
+            , class "Cradio"
             , id c.id
             , name q.id
             , Events.onClick (ChoiceSelected q c)
@@ -245,7 +241,7 @@ viewQuizSubmittingResult quiz =
 
 viewPoints : Quiz -> Html Msg
 viewPoints quiz =
-    div [] [ text <| "your score is " ++ String.fromInt (calculatePoints quiz) ]
+    div [ class "QTR" ] [ text <| "your score is " ++ String.fromInt (calculatePoints quiz) ]
 
 
 calculatePoints : Quiz -> Int

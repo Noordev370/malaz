@@ -13,6 +13,7 @@
 
 body {
     background-color: var(--bg-color);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, Roboto, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
 
@@ -32,30 +33,49 @@ a {
 }
 
 .elm-popup {
+    font-size: 1.5em;
+    background-color: whitesmoke;
+    z-index: 1;
     position: absolute;
     top: 50%;
-    right: 45%;
+    right: 50%;
+    transform: translate(50%, -50%);
     border-style: solid;
-    border-width: 3px;
+    border-width: 5px;
     border-color: red;
-    padding: 5px;
+    padding: 1.1em;
 }
 
 
 /* FrontPage styles*/
 
+.QF h1 {
+    font-size: 5em;
+}
+
+.QF h3 {
+    font-size: 2em;
+    margin-bottom: 0em;
+}
+
+.QF footer {
+    font-size: 1.5em;
+    margin-top: 10em;
+}
 
 .QF>main>a {
+    font-size: 1.8em;
     display: block;
-    border-style: solid;
-    border-color: grey;
-    border-width: 3px;
-    padding: 0.5em;
+    background-color: whitesmoke;
+    border: none;
+    border-top-style: groove;
+    border-top-color: blueviolet;
+    border-width: 10px;
+    padding: 7px;
 }
 
 .QF>main>a:hover {
-    font-size: 1.2em;
-    border-width: 5px;
+    font-size: 2.5em;
 }
 
 .QF>main {
@@ -96,7 +116,7 @@ a {
     padding: 0.8em;
 }
 
-.QE > header > input{
+.QE>header>input {
     font-size: 2em;
     background-color: whitesmoke;
     border-radius: 15px;
@@ -183,6 +203,104 @@ a {
 
 /* QuizTake styles*/
 
-.QT-question:focus {
+.QTS {
+    label {
+        font-size: 2em;
+    }
+
+    button {
+        font-size: 1.4em;
+        border-style: groove;
+        border-color: blueviolet;
+        border-width: 5px;
+        padding: 10px;
+    }
+}
+
+.QTR {
+    font-size: 2em;
+    position: absolute;
+    top: 50%;
+    right: 50%;
+    transform: translate(50%, -50%);
+    background-color: whitesmoke;
+    border-color: blueviolet;
+    border-width: 10px;
+    border-style: groove;
+    padding: 1em;
+}
+
+
+
+.QTT header {
+    font-size: 1.2em;
+    text-align: center;
+    background-color: whitesmoke;
+    border-radius: 15px;
+    border-width: 10px;
+    border-style: groove;
+    border-color: blueviolet;
+}
+
+
+
+.QTT>button {
+    font-size: 1.2em;
+    border-style: groove;
+    border-color: blueviolet;
+    border-width: 5px;
+    margin-top: 1.5em;
+    padding: 0.5em;
+}
+
+
+.QTT-section {
+    font-size: var(--section-font-size);
+    background-color: var(--question-bg-color);
+    border-top-color: blueviolet;
+    border-top-width: 10px;
+    border-top-style: groove;
+    padding: 1em;
+    margin-bottom: 1em;
+}
+
+
+
+.QTT-question {
+    background-color: var(--question-bg-color);
+    border: none;
+    border-radius: 15px;
+    padding: 1em;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+.QTT-question:focus {
     background-color: lightblue;
+}
+
+.QTT-question .Qtext {
+    font-size: var(--question-font-size);
+    background-color: inherit;
+    border: none;
+    outline: none;
+    border-bottom-style: groove;
+    margin-bottom: 1em;
+    padding: 0.2em;
+}
+
+.QT-choice .Ctext {
+    font-size: var(--choice-font-size);
+    background-color: inherit;
+    border-style: solid;
+    border-color: lightgrey;
+    border-width: 5px;
+    margin-bottom: 1em;
+    padding: 0.2em;
+    width: clamp(100px, 50%, 500px);
+}
+
+.QTT-choice .Cradio {
+    width: 25px;
+    height: 25px;
 }
